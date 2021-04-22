@@ -5,6 +5,8 @@ import sys
 import os
 import json
 
+WHAT = ["include", "exclude"]
+TYPES = ["files", "dirs"]
 MODES = ["c", "e", "ce", "s"]
 
 def progress(msg):
@@ -17,30 +19,47 @@ def error(msg):
 def sanitize_path(path):
     return path.replace(" ", "\\ ")
 
-def read_register(mode, regfile):
+def read_include_register(mode, regfile):
     with open(regfile, "r") as f:
         reg = json.load(f)
-    something = len(reg[mode]) > 0
-    if len(reg[mode]) > 0:
-        print(" ".join([sanitize_path(el) for el in reg[mode]]))
-    else:
-        pass
-        #print("nothing")
+    print(" ".join([sanitize_path(el) for el in reg["bck"][mode]]))
+
+def read_exclude_register(t, regfile):
+    with open(regfile, "r") as f:
+        reg = json.load(f)
+    print(" ".join([sanitize_path(el) for el in reg["exclude"][t]]))
+
+def start_exclude(args, regfile):
+    if args[2] not in TYPES:
+        error("Mode {} not recognized. (possible: {})".format(args[2], MODES))
+
+    read_exclude_register(args[2], regfile)
+
+def start_include(args, regfile):
+    if args[2] not in MODES:
+        error("Mode {} not recognized. (possible: {})".format(args[2], MODES))
+
+    read_include_register(args[2], regfile)
 
 def start(args):
-    if len(args) != 2:
-        error("Args expected: <root directory> <mode>")
+    if len(args) != 3:
+        error("Args expected: <root directory> <what> <mode/type>")
+
     if not os.path.isdir(args[0]):
         error("Root directory {} does not exist".format(args[0]))
 
-    if args[1] not in MODES:
-        error("Mode {} not recognized. (possible: {})".format(args[1], MODES))
-
+    if args[1] not in WHAT:
+        error("What {} not recognized. (possible {})".format(args[1], WHAT))
+    
     regfile = os.path.join(args[0], "register.json")
     if not os.path.isfile(regfile):
         error("No register file found")
     
-    read_register(args[1], regfile)
+
+    if args[1] == "exclude":
+        start_exclude(args, regfile)
+    elif args[1] == "include":
+        start_include(args, regfile)
 
 if __name__=="__main__":
     start(sys.argv[1:])

@@ -1,9 +1,9 @@
 OUT_NAME=archive.tar
 ROOT   = $(HOME)/.backup
 TMPDIR = '/tmp/bck_$(shell date +%d_%m_%y)'
-ARCHIVE_EXCLUDE_DIR = "venv"
-ARCHIVE_EXCLUDE_FILES = "*.pyc"
-ARCHIVE_CMD =tar -c -h -v --ignore-command-error -a $(foreach a, $(ARCHIVE_EXCLUDE_DIR), --exclude '$a/**\*') $(foreach a, $(ARCHIVE_EXCLUDE_FILES), --exclude '$a') -f
+
+ARCHIVE_CMD = tar -c -h -v --ignore-command-error -a -f
+
 NO_OUT= 1>/dev/null 2>/dev/null
 
 include gmsl
@@ -19,7 +19,7 @@ reset:
 	rm -rf $(ROOT)
 
 prepare:
-	echo $(ARCHIVE_CMD)
+	@echo $(ARCHIVE_CMD)
 	@rm -rf $(TMPDIR)
 	@mkdir -p $(ROOT) $(TMPDIR)
 
@@ -32,34 +32,42 @@ finish: final_archive
 
 backup_encrypted: prepare
 	$(call assert,$(ENC_PWD))
-	$(call set,FILES,$(shell ./read_from_register.py $(ROOT) e))
+	$(call set,FILES,$(shell ./read_from_register.py $(ROOT) include e))
+	$(call set,EXCLUDES_DIRS,$(foreach d, $(shell ./read_from_register.py $(ROOT) exclude dirs), --exclude='$d/**'))
+	$(call set,EXCLUDES_FILES,$(foreach f, $(shell ./read_from_register.py $(ROOT) exclude files), --exclude='$f'))
 	@echo "Backing up files to encrypt only"
 	@mkdir -p $(TMPDIR)/enc/
 	@for f in $(FILES); do ln -s "$$f" $(TMPDIR)/enc/ ; done
-	@cd $(TMPDIR)/ && $(ARCHIVE_CMD) ./enc.tar ./enc/
+	@cd $(TMPDIR)/ && $(ARCHIVE_CMD) ./enc.tar $(EXCLUDES_DIRS) $(EXCLUDES_FILES) ./enc/
 	@gpg -c --batch --passphrase $(ENC_PWD) $(TMPDIR)/enc.tar
 	@rm $(TMPDIR)/enc.tar
 
 backup_compressed: prepare
-	$(call set,FILES,$(shell ./read_from_register.py $(ROOT) c))
+	$(call set,FILES,$(shell ./read_from_register.py $(ROOT) include c))
+	$(call set,EXCLUDES_DIRS,$(foreach d, $(shell ./read_from_register.py $(ROOT) exclude dirs), --exclude='$d/**'))
+	$(call set,EXCLUDES_FILES,$(foreach f, $(shell ./read_from_register.py $(ROOT) exclude files), --exclude='$f'))
 	@echo "Backing up files to compress only"
 	@mkdir -p $(TMPDIR)/cmp/
 	@for f in $(FILES); do ln -s "$$f" $(TMPDIR)/cmp/ ; done
-	@cd $(TMPDIR)/ && $(ARCHIVE_CMD) ./cmp.tar.xz ./cmp/
+	@cd $(TMPDIR)/ && $(ARCHIVE_CMD) ./cmp.tar.xz $(EXCLUDES_FILES) $(EXCLUDES_DIRS) ./cmp/
 
 backup_encrypted_compressed: prepare
 	$(call assert,$(ENC_PWD))
-	$(call set,FILES,$(shell ./read_from_register.py $(ROOT) ce))
+	$(call set,FILES,$(shell ./read_from_register.py $(ROOT) include ce))
+	$(call set,EXCLUDES_DIRS,$(foreach d, $(shell ./read_from_register.py $(ROOT) exclude dirs), --exclude='$d/**'))
+	$(call set,EXCLUDES_FILES,$(foreach f, $(shell ./read_from_register.py $(ROOT) exclude files), --exclude='$f'))
 	@echo "Backing up files to encrypt and compress"
 	@mkdir -p $(TMPDIR)/enc_cmp/ 
 	@for f in $(FILES); do ln -s "$$f" $(TMPDIR)/enc_cmp/ ; done
-	@cd $(TMPDIR)/ && $(ARCHIVE_CMD) ./enc_cmp.tar.xz ./enc_cmp/
+	@cd $(TMPDIR)/ && $(ARCHIVE_CMD) ./enc_cmp.tar.xz $(EXCLUDES_DIRS) $(EXCLUDES_FILES) ./enc_cmp/
 	@gpg -c --batch --passphrase $(ENC_PWD) $(TMPDIR)/enc_cmp.tar.xz
 	@rm $(TMPDIR)/enc_cmp.tar.xz
 
 store_only: prepare
-	$(call set,FILES,$(shell ./read_from_register.py $(ROOT) s))
+	$(call set,FILES,$(shell ./read_from_register.py $(ROOT) include s))
+	$(call set,EXCLUDES_DIRS,$(foreach d, $(shell ./read_from_register.py $(ROOT) exclude dirs), --exclude='$d/**'))
+	$(call set,EXCLUDES_FILES,$(foreach f, $(shell ./read_from_register.py $(ROOT) exclude files), --exclude='$f'))
 	@echo "Backing up files to store only"
 	@mkdir -p $(TMPDIR)/store/
 	@for f in $(FILES); do ln -s "$$f" $(TMPDIR)/store/ ; done
-	@cd $(TMPDIR)/ && $(ARCHIVE_CMD) ./store.tar ./store/
+	@cd $(TMPDIR)/ && $(ARCHIVE_CMD) ./store.tar $(EXCLUDES_DIRS) $(EXCLUDES_FILES) ./store/

@@ -22,16 +22,16 @@ def register_all(relative_root, mode, register_file, pathlist):
         reg = json.load(f)
 
     # Purging paths that doesn't exist anymore
-    reg = {m:[p for p in l if (os.path.isfile(p) or os.path.isdir(p))] for m, l in reg.items()}
+    reg["bck"] = {m:[p for p in l if (os.path.isfile(p) or os.path.isdir(p))] for m, l in reg["backup"].items()}
 
     for rel_path in pathlist:
         path = os.path.abspath(os.path.join(relative_root, rel_path))
-        if path in reg[mode]:
+        if path in reg["bck"][mode]:
             warning("Path {} already registered, ignoring ...".format(path))
             continue
         if os.path.isfile(path) or os.path.isdir(path):
             progress("Registered file {}".format(path))
-            reg[mode].append(path)
+            reg["bck"][mode].append(path)
         else:
             warning("Path {} is not a file nor a directory, ignoring...".format(path))
 
@@ -52,7 +52,8 @@ def start(args):
 
     regfile = os.path.join(args[1], "register.json")
     if not os.path.isfile(regfile):
-        reg = {m:list() for m in MODES}
+        reg = {"excl":{"dirs":[], "files":[]}}
+        reg["bck"] = {m:list() for m in MODES}
         with open(regfile, "w") as f:
             json.dump(reg, f)
     register_all(args[0], args[2], regfile, args[3:])
