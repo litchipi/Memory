@@ -18,6 +18,8 @@ def check_exist_else_create(path):
 def start(args):
     if not args.subcmd:
         return backup(args)
+    elif args.subcmd == "all":
+        return backup_all(args)
     elif args.subcmd == "register":
         return register(args)
     elif args.subcmd == "config":
@@ -25,6 +27,9 @@ def start(args):
     else:
         error("Subcommand not recognized: {}".format(args.subcmd))
 
+def backup_all(args):
+    #TODO   BACKUP ALL CATEGORIES
+    pass
 def backup(args):
     #TODO   Backup everything
     pass

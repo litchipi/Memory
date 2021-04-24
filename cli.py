@@ -6,11 +6,11 @@ from tui_toolbox import error
 def generate_parser():
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--all', '-a', help="Backup everything", action="store_true")
     parser.add_argument('--category', '-c', action='append', help='The name of the category you want to backup')
 
     subparsers = parser.add_subparsers(dest="subcmd", help='Commands to manage backups')
-    
+
+    parser_all = subparsers.add_parser('all', help='Backup all categories')
     parser_register = subparsers.add_parser('register', help='Register new files / folders for backup')
     __generate_register_parser(parser_register)
     
@@ -33,8 +33,8 @@ def __generate_register_parser(parser):
 
 def validate_args(args, parser):
     if not args.subcmd:
-        if (not args.all) and (not args.category):
-            error("Requires at least 1 category name (or '--all'/'-a' flag) or a subcommand", help_msg=parser.format_help())
+        if (not args.subcmd) and (not args.category):
+            error("Requires at least 1 category name or a subcommand", help_msg=parser.format_help())
         if args.all and args.category:
             error("Either backup all or backup some of them", help_msg=parser.format_help())
     elif args.subcmd in ["register", "config"]:
