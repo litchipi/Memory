@@ -1,3 +1,4 @@
+import pathlib
 import argparse
 
 from tui_toolbox import error
@@ -26,7 +27,9 @@ def __generate_config_parser(parser):
 
 def __generate_register_parser(parser):
     #TODO   Add argument for what method to use to store the file
-    pass
+    parser.add_argument("--method", "-m", help="Method to use to backup (ce: compressed + encrypted, c: compressed, e: encrypted, s: stored).",
+            choices=['ce', 'c', 'e', 's'], default='c')
+    parser.add_argument("targets", help="File / Directory to register for backup", type=pathlib.Path, nargs="+")
 
 def validate_args(args, parser):
     if not args.subcmd:
@@ -41,6 +44,10 @@ def validate_args(args, parser):
             error("Requires a category for action \"{}\"".format(args.subcmd))
         if len(args.category) > 1:
             error("Cannot perform \"{}\" action on more than 1 category".format(args.subcmd))
+
+    if args.subcmd == "register":
+        if not args.method:
+            error("Need to specify what method to use to backup")
 
 def parse_args():
     parser = generate_parser()

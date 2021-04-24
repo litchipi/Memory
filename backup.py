@@ -40,7 +40,24 @@ def register(args):
         with open(regfile, "w") as f:
             json.dump(reg, f)
 
-    #TODO   Register to backup
+    with open(regfile, "r") as f:
+        reg = json.load(f)
+
+    # Purging paths that doesn't exist anymore
+    reg["bck"] = {m:[p for p in l if (os.path.isfile(p) or os.path.isdir(p))] for m, l in reg["bck"].items()}
+
+    for path in args.targets:
+        if path in reg["bck"][args.method]:
+            warning("Path {} already registered, ignoring ...".format(path))
+            continue
+        if os.path.isfile(path) or os.path.isdir(path):
+            progress("Registered file {}".format(path))
+            reg["bck"][args.method].append(str(path.absolute()))
+        else:
+            warning("Path {} is not a file nor a directory, ignoring...".format(path))
+
+    with open(regfile, "w") as f:
+        json.dump(reg, f)
 
 def config(args):
     #TODO   Configure a specific backup stuff
