@@ -27,7 +27,7 @@ def read_include_register(mode, regfile):
 def read_exclude_register(t, regfile):
     with open(regfile, "r") as f:
         reg = json.load(f)
-    print(" ".join([sanitize_path(el) for el in reg["exclude"][t]]))
+    print(" ".join([sanitize_path(el) for el in reg["excl"][t]]))
 
 def start_exclude(args, regfile):
     if args[2] not in TYPES:

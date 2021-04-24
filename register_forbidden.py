@@ -21,9 +21,8 @@ def register_exclusion(relative_root, t, register_file, rules):
     with open(register_file, "r") as f:
         reg = json.load(f)
 
-    print(reg)
     # Purging paths that doesn't exist anymore
-    reg = {m:[p for p in l if (os.path.isfile(p) or os.path.isdir(p))] for m, l in reg["bck"].items()}
+    reg["bck"] = {m:[p for p in l if (os.path.isfile(p) or os.path.isdir(p))] for m, l in reg["bck"].items()}
 
     for r in rules:
         if r in reg["excl"][t]:

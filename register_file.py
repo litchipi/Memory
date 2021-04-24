@@ -22,7 +22,7 @@ def register_all(relative_root, mode, register_file, pathlist):
         reg = json.load(f)
 
     # Purging paths that doesn't exist anymore
-    reg["bck"] = {m:[p for p in l if (os.path.isfile(p) or os.path.isdir(p))] for m, l in reg["backup"].items()}
+    reg["bck"] = {m:[p for p in l if (os.path.isfile(p) or os.path.isdir(p))] for m, l in reg["bck"].items()}
 
     for rel_path in pathlist:
         path = os.path.abspath(os.path.join(relative_root, rel_path))
