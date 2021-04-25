@@ -8,6 +8,7 @@ import os
 from tui_toolbox import error, warning, progress
 from cli import parse_args
 
+REGISTER_FNAME = "register.json"
 BACKUP_DIR = os.path.join(os.path.expanduser("~"), ".backup")
 BACKUP_MODES = ["c", "e", "ce", "s"]
 
@@ -37,8 +38,8 @@ def backup(args):
 def register(args):
     rootdir = os.path.join(BACKUP_DIR, args.category[0])
     check_exist_else_create(rootdir)
-    
-    regfile = os.path.join(rootdir, "register.json")
+
+    regfile = os.path.join(rootdir, REGISTER_FNAME)
     if not os.path.isfile(regfile):
         reg = {"excl":{"dirs":[], "files":[]}}
         reg["bck"] = {m:list() for m in BACKUP_MODES}
