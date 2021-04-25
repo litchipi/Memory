@@ -2,9 +2,11 @@
 #-*-encoding:utf-8*-
 
 import shutil
+import getpass
 import json
 import sys
 import os
+import threading
 
 from tui_toolbox import error, warning, progress
 from cli import parse_args
@@ -13,6 +15,17 @@ TMPDIR = "/tmp/bck_{}".format("TODO_DATE_HERE")
 REGISTER_FNAME = "register.json"
 BACKUP_DIR = os.path.join(os.path.expanduser("~"), ".backup")
 BACKUP_MODES = ["c", "e", "ce", "s"]
+
+
+__PWD = [threading.Semaphore(), None]
+
+def __get_password():
+    global __PWD
+    __PWD[0].acquire()
+    if __PWD[1] is None:
+        __PWD[1] = getpass.getpass()
+    __PWD[0].release()
+    return __PWD[1]
 
 def check_exist_else_create(path):
     if not os.path.isdir(path):
