@@ -35,11 +35,9 @@ def validate_args(args, parser):
     if not args.subcmd:
         if (not args.subcmd) and (not args.category):
             error("Requires at least 1 category name or a subcommand", help_msg=parser.format_help())
-        if args.all and args.category:
+        if args.subcmd == "all" and args.category:
             error("Either backup all or backup some of them", help_msg=parser.format_help())
     elif args.subcmd in ["register", "config"]:
-        if args.all:
-            error("Cannot perform \"{}\" action on all categories".format(args.subcmd))
         if not args.category:
             error("Requires a category for action \"{}\"".format(args.subcmd))
         if len(args.category) > 1:
