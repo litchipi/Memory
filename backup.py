@@ -148,12 +148,31 @@ def __backup_category(args, category):
     for mode in reg["bck"].keys():
         if len(reg["bck"][mode]) == 0: continue
         RUNNING_THREADS[category + "_" + mode] = __start_backup_thread(os.path.join(TMPDIR, category), mode, reg["excl"], reg["bck"][mode])
+
 def backup_all(args):
-    #TODO   BACKUP ALL CATEGORIES
-    pass
+    __prepare_bck()
+
+    categories = list()
+    for _, dirs, _ in os.walk(BACKUP_DIR):
+        for d in [d for d in dirs if os.path.isfile(os.path.join(BACKUP_DIR, d, REGISTER_FNAME))]:
+            categories.append(d)
+
+    for cat in categories:
+        __backup_category(args, cat)
+    __wait_backup_finished()
+    finish_backups(categories)
+
 def backup(args):
-    #TODO   Backup everything
-    pass
+    __prepare_bck()
+    for cat in args.category:
+        if not os.path.isdir(os.path.join(BACKUP_DIR, cat)):
+            warning("Category {} doesn't exist, ignoring ...".format(cat))
+        elif not os.path.isfile(os.path.join(BACKUP_DIR, cat, REGISTER_FNAME)):
+            warning("Category {} doesn't have a register, ignoring ...".format(cat))
+        else:
+            __backup_category(args, cat)
+    __wait_backup_finished()
+    finish_backups(args.category)
 
 def register(args):
     rootdir = os.path.join(BACKUP_DIR, args.category[0])
