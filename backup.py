@@ -108,11 +108,27 @@ def __backup_compressed_encrypted(wdir, excl, incl, out="enc_cmp"):
     ret = __encrypt(os.path.join(wdir, out + ".tar.xz"))
     if ret != 0: error("{} encrypt command failed, aborting ...".format(out))
 
+def __finish_backup(category):
+    ret = __call_cmdline("tar -c -h -v --ignore-command-error -a -f {} {}".format(os.path.join(BACKUP_DIR, category + ".tar"), category), cwd=TMPDIR)
+    progress("Final archive located at \"{}\"".format(os.path.join(BACKUP_DIR, category + ".tar")), heading=category)
+    if ret != 0: error("{} final archive command failed, aborting ...".format(category))
+
 def __start_backup_thread(wdir, mode, exclude, include):
     check_exist_else_create(wdir)
     t = threading.Thread(target=__backup_ops_dispatch(mode), args=(wdir, exclude, include))
     t.start()
     return t
+
+def finish_backups(categories):
+    threads = list()
+    progress("Finalizing backups...")
+    for cat in categories:
+        t = threading.Thread(target=__finish_backup, args=(cat,))
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
+
 def __wait_backup_finished():
     global RUNNING_THREADS
     while any([t.is_alive() for t in RUNNING_THREADS.values()]):
