@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #-*-encoding:utf-8*-
 
+import shutil
 import json
 import sys
 import os
@@ -8,6 +9,7 @@ import os
 from tui_toolbox import error, warning, progress
 from cli import parse_args
 
+TMPDIR = "/tmp/bck_{}".format("TODO_DATE_HERE")
 REGISTER_FNAME = "register.json"
 BACKUP_DIR = os.path.join(os.path.expanduser("~"), ".backup")
 BACKUP_MODES = ["c", "e", "ce", "s"]
@@ -69,6 +71,19 @@ def config(args):
     #TODO   Configure a specific backup stuff
     pass
 
-if __name__ == "__main__":
-    sys.exit(start(parse_args()))
+def __prepare_bck():
+    os.mkdir(TMPDIR)
 
+def cleanup():
+    if os.path.isdir(TMPDIR):
+        if os.path.abspath(TMPDIR)[:5] == '/tmp/':
+            shutil.rmtree(TMPDIR, ignore_errors=True)
+        else:
+            error("Attempt to cleanup folder not located in /tmp/")
+
+if __name__ == "__main__":
+    try:
+        ret = start(parse_args())
+    finally:
+        cleanup()
+    sys.exit(ret)
