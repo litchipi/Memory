@@ -18,6 +18,8 @@ REGISTER_FNAME = "register.json"
 BACKUP_DIR = os.path.join(os.path.expanduser("~"), ".backup")
 BACKUP_MODES = ["c", "e", "ce", "s"]
 
+THREAD_JOIN_TIMEOUT=0.1
+RUNNING_THREADS = {}
 
 __PWD = [threading.Semaphore(), None]
 
@@ -111,6 +113,25 @@ def __start_backup_thread(wdir, mode, exclude, include):
     t = threading.Thread(target=__backup_ops_dispatch(mode), args=(wdir, exclude, include))
     t.start()
     return t
+def __wait_backup_finished():
+    global RUNNING_THREADS
+    while any([t.is_alive() for t in RUNNING_THREADS.values()]):
+        for t in RUNNING_THREADS.values():
+            t.join(timeout=THREAD_JOIN_TIMEOUT)
+        RUNNING_THREADS = {c:t for c, t in RUNNING_THREADS.items() if t.is_alive()}
+
+def __backup_category(args, category):
+    rootdir = os.path.join(BACKUP_DIR, category)
+    with open(os.path.join(rootdir, REGISTER_FNAME), "r") as f:
+        reg = json.load(f)
+    
+    if "bck" not in reg.keys() or "excl" not in reg.keys():
+        error("Register file {} corrupted".format(os.path.join(rootdir, REGISTER_FNAME)))
+
+    global RUNNING_THREADS
+    for mode in reg["bck"].keys():
+        if len(reg["bck"][mode]) == 0: continue
+        RUNNING_THREADS[category + "_" + mode] = __start_backup_thread(os.path.join(TMPDIR, category), mode, reg["excl"], reg["bck"][mode])
 def backup_all(args):
     #TODO   BACKUP ALL CATEGORIES
     pass
