@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 #-*-encoding:utf-8*-
 
+import re
 import shutil
 import getpass
 import json
 import sys
 import os
 import threading
+import subprocess
 
 from tui_toolbox import error, warning, progress
 from cli import parse_args
@@ -43,6 +45,72 @@ def start(args):
     else:
         error("Subcommand not recognized: {}".format(args.subcmd))
 
+def __call_cmdline(cmd, **kwargs):
+    return subprocess.Popen(re.sub(' +', ' ', cmd).split(" "),shell=False, **kwargs).wait()
+
+def __generate_symlinks(files, wdir):
+    for f in files:
+        os.symlink(f, os.path.join(wdir, os.path.basename(f)))
+
+def __generate_excludes(excl):
+    exclude_dirs = ["--exclude=\"{}/**\"".format(d) for d in excl["dirs"]]
+    exclude_files= ["--exclude=\"{}\"".format(f) for f in excl["dirs"]]
+    exclude_substr=[] #["--exclude=\"*{}*\"".format(s) for s in excl["substr"]]
+    return " ".join([" ".join(e) for e in [exclude_dirs, exclude_files, exclude_substr]])
+
+def __backup_ops_dispatch(mode):
+    if mode == "ce":
+        return __backup_compressed_encrypted
+    elif mode == "c":
+        return __backup_compressed
+    elif mode == "e":
+        return __backup_encrypted
+    elif mode == "s":
+        return __backup_stored
+    else:
+        error("Cannot find backup operation for mode {}".format(mode))
+
+def __archive(outf, arch_dir, incl, excl):
+    os.makedirs(arch_dir)
+    __generate_symlinks(incl, arch_dir)
+    all_excludes = __generate_excludes(excl)
+    rootdir = os.path.abspath(arch_dir + "/../")
+    ret = __call_cmdline("tar -c -h -v --ignore-command-error -a {} -f {} {}".format(all_excludes, os.path.relpath(outf, rootdir), os.path.relpath(arch_dir, rootdir)),
+        cwd=rootdir)
+    progress("Return code {} from commandline".format(ret), heading=outf)
+    shutil.rmtree(arch_dir, ignore_errors=True) #os.rmdir(arch_dir)
+    return ret
+
+def __encrypt(arch):
+    ret = __call_cmdline("gpg -c --batch --passphrase {} {}".format(__get_password(), arch))
+    os.remove(arch)
+    return ret
+
+def __backup_stored(wdir, excl, incl, out="stored"):
+    ret = __archive(os.path.join(wdir, out + ".tar"), os.path.join(wdir, out), incl, excl)
+    if ret != 0: error("{} archive command failed, aborting ...".format(out))
+
+def __backup_compressed(wdir, excl, incl, out="cmp"):
+    ret = __archive(os.path.join(wdir, out + ".tar.xz"), os.path.join(wdir, out), incl, excl)
+    if ret != 0: error("{} archive command failed, aborting ...".format(out))
+
+def __backup_encrypted(wdir, excl, incl, out="enc"):
+    ret = __archive(os.path.join(wdir, out + ".tar"), os.path.join(wdir, out), incl, excl)
+    if ret != 0: error("{} archive command failed, aborting ...".format(out))
+    ret = __encrypt(os.path.join(wdir, out + ".tar"))
+    if ret != 0: error("{} encrypt command failed, aborting ...".format(out))
+
+def __backup_compressed_encrypted(wdir, excl, incl, out="enc_cmp"):
+    ret = __archive(os.path.join(wdir, out + ".tar.xz"), os.path.join(wdir, out), incl, excl)
+    if ret != 0: error("{} archive command failed, aborting ...".format(out))
+    ret = __encrypt(os.path.join(wdir, out + ".tar.xz"))
+    if ret != 0: error("{} encrypt command failed, aborting ...".format(out))
+
+def __start_backup_thread(wdir, mode, exclude, include):
+    check_exist_else_create(wdir)
+    t = threading.Thread(target=__backup_ops_dispatch(mode), args=(wdir, exclude, include))
+    t.start()
+    return t
 def backup_all(args):
     #TODO   BACKUP ALL CATEGORIES
     pass
