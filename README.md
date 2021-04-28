@@ -3,6 +3,15 @@ Backup tool easy to use in CLI
 
 ## Work in progress, do not use yet.
 
+## Requierements
+
+`sudo apt install tar gpg xz-utils python3`
+`pip install toml`
+
+
+
+# OLD README
+
 ## How to install ?
 ./install.sh
 

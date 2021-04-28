@@ -6,6 +6,7 @@ COLORS = {
         "red":"91",
         "yellow":"93",
         "blue":"94",
+        "purple":"95",
         }
 
 EFFECTS = {
@@ -37,4 +38,13 @@ def progress(msg, color="blue", heading=None):
     else:
         s = create_style(color) + "--- " + RESET
     s += create_style(color) + str(msg) + RESET
+    print(s)
+
+def flow_display(msg, heading=None, color="purple", n=0):
+    s = ""
+    if heading:
+        s = create_style(color,"italic") + str(heading) + "> " + RESET
+    else:
+        s = create_style(color) + "| " + RESET
+    s += ("\t"*n) + create_style(color, "italic") + str(msg) + RESET
     print(s)
