@@ -5,7 +5,7 @@ import subprocess
 from src.tools import GlobalConstants as gcst
 
 from src.tui_toolbox import error, progress, warning
-from src.tools import prep_popen_cmd, edit_list_in_plaintext
+from src.tools import edit_list_in_plaintext
 
 def get_config_fname(cat):
     return os.path.join(gcst.BACKUP_DIR, cat, "config.toml")

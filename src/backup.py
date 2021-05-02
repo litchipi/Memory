@@ -6,16 +6,12 @@ import threading
 import subprocess
 
 from src.tui_toolbox import progress, error, warning
-from src.tools import __get_password, check_exist_else_create
+from src.tools import __get_password, check_exist_else_create, load_registry, call_cmdline
 from src.tools import GlobalConstants as gcst
-from src.register import load_register, read_includes
+from src.register import read_includes
 from src.exclude import read_all_excludes, generate_excludes
 
 RUNNING_THREADS = {}
-
-def __call_cmdline(cmd, **kwargs):
-    #print("+ " + str(cmd))
-    return subprocess.Popen(re.sub(' +', ' ', cmd).split(" "),shell=False, **kwargs).wait()
 
 def __generate_symlinks(files, wdir):
     for f in files:
@@ -37,19 +33,23 @@ def __backup_ops_dispatch(mode):
     else:
         error("Cannot find backup operation for mode {}".format(mode))
 
-def __archive(outf, arch_dir, incl, excl):
+def __archive(outf, arch_dir, incl, excl, add_args=""):
     os.makedirs(arch_dir)
     __generate_symlinks(incl, arch_dir)
     all_excludes = generate_excludes(excl)
     rootdir = os.path.abspath(arch_dir + "/../")
-    ret = __call_cmdline("tar -c -h -v --ignore-command-error -a {} -f {} {}".format(all_excludes, os.path.relpath(outf, rootdir), os.path.relpath(arch_dir, rootdir)),
+    ret = call_cmdline("tar -c -h -v --ignore-command-error -a {} -f {} {} {}".format(add_args, 
+            os.path.relpath(outf, rootdir),
+            all_excludes,
+            os.path.relpath(arch_dir, rootdir)
+            ),
         cwd=rootdir)
     progress("Return code {} from commandline".format(ret), heading=outf)
     shutil.rmtree(arch_dir, ignore_errors=True) #os.rmdir(arch_dir)
     return ret
 
 def __encrypt(arch):
-    ret = __call_cmdline("gpg -c --batch --passphrase {} {}".format(__get_password(), arch))
+    ret = call_cmdline("gpg -c --batch --passphrase {} {}".format(__get_password(), arch))
     os.remove(arch)
     return ret
 
@@ -74,7 +74,7 @@ def __backup_compressed_encrypted(wdir, excl, incl, out="enc_cmp"):
     if ret != 0: error("{} encrypt command failed, aborting ...".format(out))
 
 def __finish_backup(category):
-    ret = __call_cmdline("tar -c -h -v --ignore-command-error -a -f {} {}".format(os.path.join(gcst.BACKUP_DIR, category + ".tar"), category), cwd=gcst.TMPDIR)
+    ret = call_cmdline("tar -c -h -v --ignore-command-error -a -f {} {}".format(os.path.join(gcst.BACKUP_DIR, category + ".tar"), category), cwd=gcst.TMPDIR)
     progress("Final archive located at \"{}\"".format(os.path.join(gcst.BACKUP_DIR, category + ".tar")), heading=category)
     if ret != 0: error("{} final archive command failed, aborting ...".format(category))
 
@@ -104,8 +104,8 @@ def __wait_backup_finished():
 
 def __backup_category(args, category):
     rootdir = os.path.join(gcst.BACKUP_DIR, category)
-    reg = load_register(os.path.join(rootdir, gcst.REGISTER_FNAME))
-    
+    reg = load_registry(os.path.join(rootdir, gcst.REGISTER_FNAME))
+
     global RUNNING_THREADS
     for mode in gcst.BACKUP_METHODS:
         incl = read_includes(reg, mode)
@@ -136,6 +136,7 @@ def backup_all(args):
         for d in [d for d in dirs if os.path.isfile(os.path.join(gcst.BACKUP_DIR, d, gcst.REGISTER_FNAME))]:
             categories.append(d)
 
+    __get_password()
     for cat in categories:
         __backup_category(args, cat)
     __wait_backup_finished()
@@ -149,12 +150,13 @@ def backup(args):
         elif not os.path.isfile(os.path.join(gcst.BACKUP_DIR, cat, gcst.REGISTER_FNAME)):
             warning("Category {} doesn't have a register, ignoring ...".format(cat))
         else:
+            __get_password()
             __backup_category(args, cat)
     __wait_backup_finished()
     finish_backups(args.category)
 
 def validate_backup(args):
-    if (args.subcmd == "all") and args.categories:
+    if (args.subcmd == "all") and args.category:
         error("Either backup all or backup some of them")
 
 def generate_backup_parser(parser):

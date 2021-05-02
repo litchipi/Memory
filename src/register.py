@@ -5,31 +5,12 @@ import pathlib
 from src.tui_toolbox import error, warning, progress
 from src.tools import GlobalConstants as gcst
 from src.tools import check_exist_else_create, edit_list_in_plaintext
-
-def setup_default_register(fname):
-    with open(fname, "w") as f:
-        toml.dump(gcst.DEFAULT_CAT_REGISTER, f)
-
-def write_register(fname, reg):
-    with open(fname, "w") as f:
-        toml.dump(reg, f)
-
-def load_register(fname):
-    with open(fname, "r") as f:
-        reg = toml.load(f)
-    __validate_register(reg)
-    return reg
-
-def __validate_register(reg):
-    if "include" not in reg.keys() or "exclude" not in reg.keys():
-        error("Register file corrupted")
-
-
+from src.tools import setup_default_registry, load_registry, write_registry
 
 def read_includes(reg, mode):
     if mode not in gcst.BACKUP_METHODS:
         error("Mode {} does not exist".format(mode))
-    return reg["include"][mode]
+    return reg[gcst.INCLUDE_TEXT][mode]
 
 def validate_entry(f):
     return os.path.isfile(f) or os.path.isdir(f)
@@ -44,12 +25,12 @@ def expand_path(f):
 
 def add_targets(targets, method, reg):
     for path in targets:
-        if path in reg["include"][method]:
+        if str(path.absolute()) in reg[gcst.INCLUDE_TEXT][method]:
             warning("Path {} already registered, ignoring ...".format(path))
             continue
         if os.path.isfile(path) or os.path.isdir(path):
-            progress("Registered file {}".format(path))
-            reg["include"][method].append(str(path.absolute()))
+            progress("Registered file {}".format(path), heading="Method {}".format(method))
+            reg[gcst.INCLUDE_TEXT][method].append(str(path.absolute()))
         else:
             warning("Path {} is not a file nor a directory, ignoring...".format(path))
 
@@ -61,19 +42,19 @@ def register(args):
 
     regfile = os.path.join(rootdir, gcst.REGISTER_FNAME)
     if not os.path.isfile(regfile):
-        setup_default_register(regfile)
+        setup_default_registry(regfile)
 
-    reg = load_register(regfile)
+    reg = load_registry(regfile)
 
     # Purging paths that doesn't exist anymore
-    reg["include"] = {m:[p for p in l if (os.path.isfile(p) or os.path.isdir(p))] for m, l in reg["include"].items()}
+    reg[gcst.INCLUDE_TEXT] = {m:[p for p in l if (os.path.isfile(p) or os.path.isdir(p))] for m, l in reg[gcst.INCLUDE_TEXT].items()}
 
     if args.edit:
-        progress("Edit")
-        edit_list_in_plaintext(regfile, ["include", args.method], validate_fct=validate_entry, transform_fct=expand_path)
+        progress("Editing register for category {}".format(args.category[0]))
+        edit_list_in_plaintext(regfile, [gcst.INCLUDE_TEXT, args.method], validate_fct=validate_entry, transform_fct=expand_path)
     else:
         add_targets(args.targets, args.method, reg)
-        write_register(regfile, reg)
+        write_registry(regfile, reg)
 
 def validate_register(args):
     if not args.method:
@@ -85,12 +66,9 @@ def validate_register(args):
     if not args.edit and not args.targets:
         error("Specify a target to register, or use --edit to use external editor")
 
-    if args.edit and args.method == "a":
-        args.method = "c"
-
 def generate_register_parser(parser):
     parser.add_argument("--method", "-m", help="Method to use to backup (a: auto (w/ file extension, method \"c\" if unknown), ce: compressed + encrypted, c: compressed, e: encrypted, s: stored).",
-            choices=gcst.BACKUP_METHODS + ["a"], default='a')
+            choices=gcst.BACKUP_METHODS, default='c')
     parser.add_argument('--category', '-c', action='append', help='The name of the category you want to backup')
     parser.add_argument("--edit", "-e", help="Edit the list using an external editor. (One by line)", action="store_true")
     parser.add_argument("targets", help="File / Directory to register for backup", type=pathlib.Path, nargs="*")

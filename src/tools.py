@@ -15,11 +15,14 @@ class GlobalConstants:
     REGISTER_FNAME = "register.toml"
     BACKUP_DIR = os.path.join(os.path.expanduser("~"), ".backup")
     BACKUP_METHODS = ["c", "e", "ce", "s"]
+    EXCLUDES_TYPES = ["files", "dirs", "substr"]
     THREAD_JOIN_TIMEOUT=0.1
     EDITOR_CMD = "vim "
-    CONFIG_FORBIDDEN_CHARS = "{}[],;."
+    CONFIG_FORBIDDEN_CHARS = "{}[],;"
     DEFAULT_CAT_CONFIG = {}
-    DEFAULT_CAT_REGISTER = {"include":{m:list() for m in BACKUP_METHODS}, "exclude":{"files":[], "dirs":[], "substr":[]}}
+    INCLUDE_TEXT = "include"
+    EXCLUDE_TEXT = "exclude"
+    DEFAULT_CAT_REGISTER = {INCLUDE_TEXT:{m:list() for m in BACKUP_METHODS}, EXCLUDE_TEXT:{t:list() for t in EXCLUDES_TYPES}}
 
 __PWD = [threading.Semaphore(), None]
 
@@ -35,8 +38,12 @@ def check_exist_else_create(path):
     if not os.path.isdir(path):
         os.makedirs(path)
 
-def prep_popen_cmd(cmd):
-    return re.sub(' +', ' ', cmd).split(" ")
+def call_cmdline(cmd, **kwargs):
+    #return subprocess.Popen(__prep_popen_cmd(cmd).split(" "),shell=False, **kwargs).wait()
+    return subprocess.Popen(__prep_popen_cmd(cmd), shell=True, **kwargs).wait()
+
+def __prep_popen_cmd(cmd):
+    return re.sub(' +', ' ', cmd)
 
 def get_tmp_dir(k=20):
     dirname = "mem." + "".join(random.choices(string.ascii_lowercase + string.digits, k=k))
@@ -44,7 +51,6 @@ def get_tmp_dir(k=20):
     return dirname
 
 def rm_tmp_dir(dirname):
-    print(dirname)
     if dirname[:4] == "mem.":
         shutil.rmtree(os.path.join("/tmp/", dirname))
     else:
@@ -57,12 +63,10 @@ def extract_from_file(fname):
         return toml.load(f)
 
 def export_to_file(fname, data):
-    print("export ", data, fname)
     with open(fname, "w") as f:
         toml.dump(data, f)
 
 def edit_list_in_plaintext(fname, keys_names, name="unknown", recurs=0, dirname=None, **kwargs):
-    print(fname, keys_names, name, recurs, dirname)
     if len(keys_names) > 1:
         data = extract_from_file(fname)
         key_name = keys_names.pop(0)
@@ -75,11 +79,8 @@ def edit_list_in_plaintext(fname, keys_names, name="unknown", recurs=0, dirname=
         export_to_file(tmp_fname, data[key_name])
         ret = edit_list_in_plaintext(tmp_fname, keys_names, name=name, recurs=recurs+1, dirname=dirname, **kwargs)
         
-        print(data)
         data[key_name] = extract_from_file(tmp_fname)
-        print(data)
         rm_tmp_dir(dirname)
-        print(fname)
         export_to_file(fname, data)
         return ret
     elif len(keys_names) == 1:
@@ -97,12 +98,11 @@ def __edit_list_in_plaintext(fname, key_name, name="unknown", **kwargs):
     tmp_fname = os.path.join("/tmp/", tmpdir, key_name)
     dump_to_user(tmp_fname, data[key_name])
 
-    subprocess.Popen(prep_popen_cmd(GlobalConstants.EDITOR_CMD + tmp_fname), shell=False).wait()
+    call_cmdline(GlobalConstants.EDITOR_CMD + tmp_fname)
 
     user_input = load_user_input(tmp_fname, **kwargs)
     rm_tmp_dir(tmpdir)
     data[key_name] = user_input
-    print(data)
     export_to_file(fname, data)
     return data
 
@@ -129,6 +129,7 @@ def __validate_load_userinp(data):
 
 
 
+########" Configuration
 
 def update_config(cfg_fname, key_name, data):
     with open(cfg_fname, "r") as f:
@@ -147,4 +148,26 @@ def extract_from_config(cfg_fname, key_name):
         parsed_toml[key_name]
     except KeyError:
         error("Config name \"{}\" does not exist in configuration".format(key_name))
+
+
+
+########## Registry
+
+def setup_default_registry(fname):
+    with open(fname, "w") as f:
+        toml.dump(GlobalConstants.DEFAULT_CAT_REGISTER, f)
+
+def write_registry(fname, reg):
+    with open(fname, "w") as f:
+        toml.dump(reg, f)
+
+def load_registry(fname):
+    with open(fname, "r") as f:
+        reg = toml.load(f)
+    __validate_register(reg)
+    return reg
+
+def __validate_register(reg):
+    if (GlobalConstants.INCLUDE_TEXT not in reg.keys()) or (GlobalConstants.EXCLUDE_TEXT not in reg.keys()):
+        error("Register file corrupted")
 
