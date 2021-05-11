@@ -2,7 +2,7 @@ import os
 import re
 import json
 import shutil
-import threading
+import multiprocessing as mproc
 import subprocess
 
 from src.tui_toolbox import progress, error, warning
@@ -11,7 +11,7 @@ from src.tools import GlobalConstants as gcst
 from src.register import read_includes
 from src.exclude import read_all_excludes, generate_excludes
 
-RUNNING_THREADS = {}
+RUNNING_PROCESSES = {}
 
 def __generate_symlinks(files, wdir):
     for f in files:
@@ -78,39 +78,39 @@ def __finish_backup(category):
     progress("Final archive located at \"{}\"".format(os.path.join(gcst.BACKUP_DIR, category + ".tar")), heading=category)
     if ret != 0: error("{} final archive command failed, aborting ...".format(category))
 
-def __start_backup_thread(wdir, mode, exclude, include):
+def __start_backup_process(wdir, mode, exclude, include):
     check_exist_else_create(wdir)
-    t = threading.Thread(target=__backup_ops_dispatch(mode), args=(wdir, exclude, include))
+    t = mproc.Process(target=__backup_ops_dispatch(mode), args=(wdir, exclude, include))
     t.start()
     return t
 
 def finish_backups(categories):
-    threads = list()
+    processes = list()
     progress("Finalizing backups...")
     for cat in categories:
         if not os.path.isdir(os.path.join(gcst.TMPDIR, cat)): continue
-        t = threading.Thread(target=__finish_backup, args=(cat,))
+        t = mproc.Process(target=__finish_backup, args=(cat,))
         t.start()
-        threads.append(t)
-    for t in threads:
+        processes.append(t)
+    for t in processes:
         t.join()
 
 def __wait_backup_finished():
-    global RUNNING_THREADS
-    while any([t.is_alive() for t in RUNNING_THREADS.values()]):
-        for t in RUNNING_THREADS.values():
+    global RUNNING_PROCESSES
+    while any([t.is_alive() for t in RUNNING_PROCESSES.values()]):
+        for t in RUNNING_PROCESSES.values():
             t.join(timeout=gcst.THREAD_JOIN_TIMEOUT)
-        RUNNING_THREADS = {c:t for c, t in RUNNING_THREADS.items() if t.is_alive()}
+        RUNNING_PROCESSES = {c:t for c, t in RUNNING_PROCESSES.items() if t.is_alive()}
 
 def __backup_category(args, category):
     rootdir = os.path.join(gcst.BACKUP_DIR, category)
     reg = load_registry(os.path.join(rootdir, gcst.REGISTER_FNAME))
 
-    global RUNNING_THREADS
+    global RUNNING_PROCESSES
     for mode in gcst.BACKUP_METHODS:
         incl = read_includes(reg, mode)
         if len(incl) == 0: continue
-        RUNNING_THREADS[category + "_" + mode] = __start_backup_thread(os.path.join(gcst.TMPDIR, category), mode, read_all_excludes(reg), incl)
+        RUNNING_PROCESSES[category + "_" + mode] = __start_backup_process(os.path.join(gcst.TMPDIR, category), mode, read_all_excludes(reg), incl)
 
 def __prepare_bck():
     os.mkdir(gcst.TMPDIR)
