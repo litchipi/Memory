@@ -11,7 +11,7 @@ import threading
 import subprocess
 
 from src.tui_toolbox import error, warning, progress, flow_display
-from src.cli import parse_args
+from src.cli import parse_args, get_commands_handlers
 from src.backup import backup, backup_all, cleanup
 from src.tools import check_exist_else_create
 from src.config import config
@@ -19,16 +19,11 @@ from src.register import register
 from src.exclude import exclude
 
 def start(args):
+    handlers = get_commands_handlers()
     if not args.subcmd:
-        return backup(args)
-    elif args.subcmd == "all":
-        return backup_all(args)
-    elif args.subcmd == "register":
-        return register(args)
-    elif args.subcmd == "config":
-        return config(args)
-    elif args.subcmd == "exclude":
-        return exclude(args)
+        handlers["__default__"](args)
+    elif args.subcmd in handlers.keys():
+        handlers[args.subcmd](args)
     else:
         error("Subcommand not recognized: {}".format(args.subcmd))
 

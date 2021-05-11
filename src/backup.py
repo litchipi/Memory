@@ -156,8 +156,14 @@ def backup(args):
     finish_backups(args.category)
 
 def validate_backup(args):
-    if (args.subcmd == "all") and args.category:
+    pass
+
+def validate_backup_all(args):
+    if args.category:
         error("Either backup all or backup some of them")
 
 def generate_backup_parser(parser):
+    parser.add_argument('--category', '-c', action='append', help='The name of the category you want to backup')
+
+def generate_backup_all_parser(parser):
     pass

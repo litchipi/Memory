@@ -23,6 +23,7 @@ class GlobalConstants:
     INCLUDE_TEXT = "include"
     EXCLUDE_TEXT = "exclude"
     DEFAULT_CAT_REGISTER = {INCLUDE_TEXT:{m:list() for m in BACKUP_METHODS}, EXCLUDE_TEXT:{t:list() for t in EXCLUDES_TYPES}}
+    DEFAULT_SUBCMD = "backup"
 
 __PWD = [threading.Semaphore(), None]
 
