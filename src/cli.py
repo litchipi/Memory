@@ -8,6 +8,7 @@ from src.backup import validate_backup, generate_backup_parser, backup, validate
 from src.register import validate_register, generate_register_parser, register
 from src.config import validate_config, generate_config_parser, config
 from src.exclude import validate_exclude, generate_exclude_parser, exclude
+from src.edit import validate_edit, generate_edit_parser, edit
 
 SUBCMD_FCTS = {
         "backup": [generate_backup_parser, validate_backup, backup, "Backup one or more categories"],
@@ -15,6 +16,7 @@ SUBCMD_FCTS = {
         "register": [generate_register_parser, validate_register, register, "Register new files / folders for backup"],
         "exclude": [generate_exclude_parser, validate_exclude, exclude, "Exclude files / folders for backup"],
         "config": [generate_config_parser, validate_config, config, "Configure backup tool"],
+        "edit": [generate_edit_parser, validate_edit, edit, "Edit register of a category"],
         }
 
 

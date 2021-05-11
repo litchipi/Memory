@@ -27,6 +27,9 @@ class GlobalConstants:
 
 __PWD = [threading.Semaphore(), None]
 
+def check_category_exist(cat):
+    return os.path.isdir(os.path.join(GlobalConstants.BACKUP_DIR, cat))
+
 def __get_password():
     global __PWD
     __PWD[0].acquire()
