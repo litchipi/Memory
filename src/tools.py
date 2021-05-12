@@ -1,6 +1,7 @@
 import os
 import re
 import toml
+import time
 import string
 import random
 import shutil
@@ -157,9 +158,14 @@ def extract_from_config(cfg_fname, key_name):
 
 ########## Registry
 
+def get_current_time():
+    return int(time.time()*1000)
+
 def setup_default_registry(fname):
+    default = dict.copy(GlobalConstants.DEFAULT_CAT_REGISTER)
+    default["last_backup"] = get_current_time()
     with open(fname, "w") as f:
-        toml.dump(GlobalConstants.DEFAULT_CAT_REGISTER, f)
+        toml.dump(default, f)
 
 def write_registry(fname, reg):
     with open(fname, "w") as f:
@@ -169,9 +175,11 @@ def load_registry(fname):
     with open(fname, "r") as f:
         reg = toml.load(f)
     __validate_register(reg)
+    if "last_backup" not in reg.keys():
+        reg["last_backup"] = 0
+        write_registry(fname, reg)
     return reg
 
 def __validate_register(reg):
     if (GlobalConstants.INCLUDE_TEXT not in reg.keys()) or (GlobalConstants.EXCLUDE_TEXT not in reg.keys()):
         error("Register file corrupted")
-
