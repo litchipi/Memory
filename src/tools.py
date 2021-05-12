@@ -61,6 +61,9 @@ def rm_tmp_dir(dirname):
     else:
         error("Attempt to remove directory not temporary")
 
+def sanitize_path(path):
+    return os.path.realpath(os.path.abspath(path))
+
 ######## EDIT PLAINTEXT TO TOML
 
 def extract_from_file(fname):

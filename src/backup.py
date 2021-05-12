@@ -6,7 +6,7 @@ import multiprocessing as mproc
 import subprocess
 
 from src.tui_toolbox import progress, error, warning
-from src.tools import __get_password, check_exist_else_create, load_registry, call_cmdline, get_current_time, write_registry
+from src.tools import __get_password, check_exist_else_create, load_registry, call_cmdline, get_current_time, write_registry, sanitize_path
 from src.tools import GlobalConstants as gcst
 from src.register import read_includes
 from src.exclude import read_all_excludes, generate_excludes
@@ -17,8 +17,9 @@ RUNNING_PROCESSES = {}
 def __generate_symlinks(files, wdir):
     for f in files:
         if os.path.isfile(f) or os.path.isdir(f):
-            print("{} -> {}".format(f, os.path.join(wdir, os.path.basename(f))))
-            os.symlink(f, os.path.join(wdir, os.path.basename(f)))
+            lname = os.path.join(wdir, os.path.basename(sanitize_path(f)))
+            print("{} -> {}".format(f, lname))
+            os.symlink(sanitize_path(f), lname)
         else:
             warning("Target {} does not exist anymore, ignoring ...".format(f))
 
