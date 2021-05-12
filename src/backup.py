@@ -99,6 +99,13 @@ def finish_backups(categories):
     for t in processes:
         t.join()
 
+    for cat in categories:
+        rootdir = os.path.join(gcst.BACKUP_DIR, cat)
+        reg_fname = os.path.join(rootdir, gcst.REGISTER_FNAME)
+        reg = load_registry(reg_fname)
+        reg["last_backup"] = get_current_time()
+        write_registry(reg_fname, reg)
+
 def __wait_backup_finished():
     global RUNNING_PROCESSES
     while any([t.is_alive() for t in RUNNING_PROCESSES.values()]):
@@ -121,8 +128,6 @@ def __backup_category(args, category):
         if "e" in mode:
             __get_password()
         RUNNING_PROCESSES[category + "_" + mode] = __create_backup_process(os.path.join(gcst.TMPDIR, category), mode, read_all_excludes(reg), incl)
-    reg["last_backup"] = get_current_time()
-    write_registry(reg_fname, reg)
 
 def __prepare_bck():
     os.mkdir(gcst.TMPDIR)
