@@ -12,7 +12,7 @@ import subprocess
 from src.tui_toolbox import error, warning, progress
 
 class GlobalConstants:
-    TMPDIR = "/tmp/bck_{}".format("TODO_DATE_HERE")
+    TMPDIR = "/tmp/tmp.memory/"
     REGISTER_FNAME = "register.toml"
     BACKUP_DIR = os.path.join(os.path.expanduser("~"), ".backup")
     BACKUP_METHODS = ["c", "e", "ce", "s"]
