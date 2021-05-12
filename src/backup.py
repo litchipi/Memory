@@ -6,10 +6,11 @@ import multiprocessing as mproc
 import subprocess
 
 from src.tui_toolbox import progress, error, warning
-from src.tools import __get_password, check_exist_else_create, load_registry, call_cmdline
+from src.tools import __get_password, check_exist_else_create, load_registry, call_cmdline, get_current_time, write_registry
 from src.tools import GlobalConstants as gcst
 from src.register import read_includes
 from src.exclude import read_all_excludes, generate_excludes
+from src.check import __check_targets_need_backup
 
 RUNNING_PROCESSES = {}
 
@@ -107,15 +108,21 @@ def __wait_backup_finished():
 
 def __backup_category(args, category):
     rootdir = os.path.join(gcst.BACKUP_DIR, category)
-    reg = load_registry(os.path.join(rootdir, gcst.REGISTER_FNAME))
+    reg_fname = os.path.join(rootdir, gcst.REGISTER_FNAME)
+    reg = load_registry(reg_fname)
 
     global RUNNING_PROCESSES
     for mode in gcst.BACKUP_METHODS:
         incl = read_includes(reg, mode)
+        if not args.force and not __check_targets_need_backup(reg["last_backup"], incl):
+            progress("Doesn't need backup for mode {}, ignoring...".format(mode), heading=category)
+            continue
         if len(incl) == 0: continue
         if "e" in mode:
             __get_password()
         RUNNING_PROCESSES[category + "_" + mode] = __create_backup_process(os.path.join(gcst.TMPDIR, category), mode, read_all_excludes(reg), incl)
+    reg["last_backup"] = get_current_time()
+    write_registry(reg_fname, reg)
 
 def __prepare_bck():
     os.mkdir(gcst.TMPDIR)
@@ -169,6 +176,7 @@ def validate_backup_all(args):
 
 def generate_backup_parser(parser):
     parser.add_argument('--category', '-c', action='append', help='The name of the category you want to backup')
+    parser.add_argument('--force', '-f', help='Force backup even if doesn\'t need to', action="store_true")
 
 def generate_backup_all_parser(parser):
-    pass
+    parser.add_argument('--force', '-f', help='Force backup even if doesn\'t need to', action="store_true")
