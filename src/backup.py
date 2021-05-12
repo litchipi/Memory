@@ -78,11 +78,14 @@ def __finish_backup(category):
     progress("Final archive located at \"{}\"".format(os.path.join(gcst.BACKUP_DIR, category + ".tar")), heading=category)
     if ret != 0: error("{} final archive command failed, aborting ...".format(category))
 
-def __start_backup_process(wdir, mode, exclude, include):
+def __start_processes():
+    for proc in RUNNING_PROCESSES.values():
+        proc.start()
+
+def __create_backup_process(wdir, mode, exclude, include):
     check_exist_else_create(wdir)
-    t = mproc.Process(target=__backup_ops_dispatch(mode), args=(wdir, exclude, include))
-    t.start()
-    return t
+    p = mproc.Process(target=__backup_ops_dispatch(mode), args=(wdir, exclude, include))
+    return p
 
 def finish_backups(categories):
     processes = list()
@@ -110,7 +113,9 @@ def __backup_category(args, category):
     for mode in gcst.BACKUP_METHODS:
         incl = read_includes(reg, mode)
         if len(incl) == 0: continue
-        RUNNING_PROCESSES[category + "_" + mode] = __start_backup_process(os.path.join(gcst.TMPDIR, category), mode, read_all_excludes(reg), incl)
+        if "e" in mode:
+            __get_password()
+        RUNNING_PROCESSES[category + "_" + mode] = __create_backup_process(os.path.join(gcst.TMPDIR, category), mode, read_all_excludes(reg), incl)
 
 def __prepare_bck():
     os.mkdir(gcst.TMPDIR)
@@ -136,9 +141,9 @@ def backup_all(args):
         for d in [d for d in dirs if os.path.isfile(os.path.join(gcst.BACKUP_DIR, d, gcst.REGISTER_FNAME))]:
             categories.append(d)
 
-    __get_password()
     for cat in categories:
         __backup_category(args, cat)
+    __start_processes()
     __wait_backup_finished()
     finish_backups(categories)
 
@@ -150,8 +155,8 @@ def backup(args):
         elif not os.path.isfile(os.path.join(gcst.BACKUP_DIR, cat, gcst.REGISTER_FNAME)):
             warning("Category {} doesn't have a register, ignoring ...".format(cat))
         else:
-            __get_password()
             __backup_category(args, cat)
+    __start_processes()
     __wait_backup_finished()
     finish_backups(args.category)
 
