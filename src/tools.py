@@ -206,6 +206,8 @@ def get_last_archived(cat, time_format="%d/%m/%y %H:%M:%S"):
     return time.strftime(time_format, time.gmtime(os.path.getmtime(get_output_fname(cat))))
 
 def get_archive_size(cat):
+    if not os.path.isfile(get_output_fname(cat)):
+        return "Not created"
     return os.stat(get_output_fname(cat)).st_size
 
 def get_cat_metadata(categories):
@@ -229,8 +231,10 @@ def ls(args):
     if not args.only_name:
         md, md_key_order, md_cat_order_by = get_cat_metadata(categories)
         print(" | ".join([key.capitalize().center(md[key]["__md_length__"]).replace("_", " ") for key in md_key_order]))
-
-    for cat in sorted(categories, key=lambda c: md[md_cat_order_by][c], reverse=True):
+        sort_fct = lambda c: md[md_cat_order_by][c]
+    else:
+        sort_fct = lambda c: c
+    for cat in sorted(categories, key=sort_fct, reverse=True):
         s = str()
         if not args.only_name:
             s += " | ".join([str(md[key][cat]).rjust(md[key]["__md_length__"]) for key in md_key_order])

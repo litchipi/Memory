@@ -18,6 +18,7 @@ def __check_targets_need_backup(last_backup_time, incl):
     return False
 
 def check(args):
+    new_bck = False
     need_do_again = {cat:{mode:False for mode in gcst.BACKUP_METHODS} for cat in args.category}
     for cat in args.category:
         rootdir = os.path.join(gcst.BACKUP_DIR, cat)
@@ -34,6 +35,10 @@ def check(args):
                     break
             if need_do_again[cat][mode]:
                 progress("Need a new backup for mode \"{}\"".format(mode), heading=cat)
+                new_bck = True
+
+    if not new_bck:
+        progress("No categories need any new backup")
     return need_do_again
 
 def generate_check_parser(parser):
