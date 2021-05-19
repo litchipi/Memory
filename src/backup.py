@@ -114,7 +114,7 @@ def __wait_backup_finished():
             t.join(timeout=gcst.THREAD_JOIN_TIMEOUT)
         RUNNING_PROCESSES = {c:t for c, t in RUNNING_PROCESSES.items() if t.is_alive()}
 
-def __backup_category(args, category):
+def __backup_category(args, category, force_backup=False):
     rootdir = os.path.join(gcst.BACKUP_DIR, category)
     reg_fname = os.path.join(rootdir, gcst.REGISTER_FNAME)
     reg = load_registry(reg_fname)
@@ -122,13 +122,14 @@ def __backup_category(args, category):
     global RUNNING_PROCESSES
     for mode in gcst.BACKUP_METHODS:
         incl = read_includes(reg, mode)
-        if not args.force and not __check_targets_need_backup(reg["last_backup"], incl):
+        excl = read_all_excludes(reg)
+        if not force_backup and not __check_targets_need_backup(reg["last_backup"], incl):
             progress("Doesn't need backup for mode {}, ignoring...".format(mode), heading=category)
             continue
         if len(incl) == 0: continue
         if "e" in mode:
             __get_password()
-        RUNNING_PROCESSES[category + "_" + mode] = __create_backup_process(os.path.join(gcst.TMPDIR, category), mode, read_all_excludes(reg), incl)
+        RUNNING_PROCESSES[category + "_" + mode] = __create_backup_process(os.path.join(gcst.TMPDIR, category), mode, excl, incl)
 
 def __prepare_bck():
     os.mkdir(gcst.TMPDIR)
@@ -152,7 +153,7 @@ def backup_all(args):
     categories = get_categories_list()
 
     for cat in categories:
-        __backup_category(args, cat)
+        __backup_category(args, cat, force_backup=(args.force or (not os.path.isfile(get_output_fname(cat)))))
     __start_processes()
     __wait_backup_finished()
     finish_backups(categories)
@@ -165,7 +166,7 @@ def backup(args):
         elif not os.path.isfile(os.path.join(gcst.BACKUP_DIR, cat, gcst.REGISTER_FNAME)):
             warning("Category {} doesn't have a register, ignoring ...".format(cat))
         else:
-            __backup_category(args, cat)
+            __backup_category(args, cat, force_backup=(args.force or (not os.path.isfile(get_output_fname(cat)))))
     __start_processes()
     __wait_backup_finished()
     finish_backups(args.category)
