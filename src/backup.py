@@ -6,8 +6,8 @@ import multiprocessing as mproc
 import subprocess
 
 from src.tui_toolbox import progress, error, warning
-from src.tools import __get_password, check_exist_else_create, load_registry, call_cmdline, get_current_time, write_registry, sanitize_path
 from src.tools import GlobalConstants as gcst
+from src.tools import __get_password, check_exist_else_create, load_registry, call_cmdline, get_current_time, write_registry, sanitize_path, get_categories_list, get_output_fname
 from src.register import read_includes
 from src.exclude import read_all_excludes, generate_excludes
 from src.check import __check_targets_need_backup
@@ -76,7 +76,7 @@ def __backup_compressed_encrypted(wdir, excl, incl, out="enc_cmp"):
     if ret != 0: error("{} encrypt command failed, aborting ...".format(out))
 
 def __finish_backup(category):
-    ret = call_cmdline("tar -c -h -v --ignore-command-error -a -f {} {}".format(os.path.join(gcst.BACKUP_DIR, category + ".tar"), category), cwd=gcst.TMPDIR)
+    ret = call_cmdline("tar -c -h -v --ignore-command-error -a -f {} {}".format(get_output_fname(category), category), cwd=gcst.TMPDIR)
     progress("Final archive located at \"{}\"".format(os.path.join(gcst.BACKUP_DIR, category + ".tar")), heading=category)
     if ret != 0: error("{} final archive command failed, aborting ...".format(category))
 
@@ -149,10 +149,7 @@ def cleanup():
 def backup_all(args):
     __prepare_bck()
 
-    categories = list()
-    for _, dirs, _ in os.walk(gcst.BACKUP_DIR):
-        for d in [d for d in dirs if os.path.isfile(os.path.join(gcst.BACKUP_DIR, d, gcst.REGISTER_FNAME))]:
-            categories.append(d)
+    categories = get_categories_list()
 
     for cat in categories:
         __backup_category(args, cat)

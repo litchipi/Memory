@@ -190,6 +190,9 @@ def check_exist_else_create(path):
     if not os.path.isdir(path):
         os.makedirs(path)
 
+def get_output_fname(cat):
+    return os.path.join(GlobalConstants.BACKUP_DIR, cat + ".tar")
+
 def get_categories_list():
     categories = list()
     for _, dirs, _ in os.walk(GlobalConstants.BACKUP_DIR):
