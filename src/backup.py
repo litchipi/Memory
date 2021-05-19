@@ -124,8 +124,9 @@ def __backup_category(args, category, force_backup=False):
         incl = read_includes(reg, mode)
         excl = read_all_excludes(reg)
         if not force_backup and not __check_targets_need_backup(reg["last_backup"], incl, reg[gcst.EXCLUDE_TEXT]["dirs"]):
-            progress("Doesn't need backup for mode {}, ignoring...".format(mode), heading=category)
             continue
+        else:
+            progress("Backup needed, starting ...", heading=category)
         if len(incl) == 0: continue
         if "e" in mode:
             __get_password()
