@@ -175,8 +175,7 @@ def validate_backup(args):
     pass
 
 def validate_backup_all(args):
-    if args.category:
-        error("Either backup all or backup some of them")
+    pass
 
 def generate_backup_parser(parser):
     parser.add_argument('--force', '-f', help='Force backup even if doesn\'t need to', action="store_true")
