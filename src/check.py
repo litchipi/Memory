@@ -10,6 +10,9 @@ def check_need_backup(last_backup_time, target):
 
 def __check_targets_need_backup(last_backup_time, incl):
     for target in incl:
+        if not os.path.exists(target):
+            warning("Target {} does not exist, skipping ...".format(target))
+            continue
         if check_need_backup(last_backup_time, target):
             return True
     return False
