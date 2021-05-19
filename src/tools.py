@@ -28,9 +28,6 @@ class GlobalConstants:
 
 __PWD = [threading.Semaphore(), None]
 
-def check_category_exist(cat):
-    return os.path.isdir(os.path.join(GlobalConstants.BACKUP_DIR, cat))
-
 def __get_password():
     global __PWD
     __PWD[0].acquire()
@@ -38,10 +35,6 @@ def __get_password():
         __PWD[1] = getpass.getpass()
     __PWD[0].release()
     return __PWD[1]
-
-def check_exist_else_create(path):
-    if not os.path.isdir(path):
-        os.makedirs(path)
 
 def call_cmdline(cmd, **kwargs):
     #return subprocess.Popen(__prep_popen_cmd(cmd).split(" "),shell=False, **kwargs).wait()
@@ -186,3 +179,63 @@ def load_registry(fname):
 def __validate_register(reg):
     if (GlobalConstants.INCLUDE_TEXT not in reg.keys()) or (GlobalConstants.EXCLUDE_TEXT not in reg.keys()):
         error("Register file corrupted")
+
+
+############ Categories
+
+def check_category_exist(cat):
+    return os.path.isdir(os.path.join(GlobalConstants.BACKUP_DIR, cat))
+
+def check_exist_else_create(path):
+    if not os.path.isdir(path):
+        os.makedirs(path)
+
+def get_categories_list():
+    categories = list()
+    for _, dirs, _ in os.walk(GlobalConstants.BACKUP_DIR):
+        for d in [d for d in dirs if os.path.isfile(os.path.join(GlobalConstants.BACKUP_DIR, d, GlobalConstants.REGISTER_FNAME))]:
+            categories.append(d)
+    return categories
+
+def get_last_archived(cat, time_format="%d/%m/%y %H:%M:%S"):
+    if not os.path.isfile(get_output_fname(cat)):
+        return "Never"
+    return time.strftime(time_format, time.gmtime(os.path.getmtime(get_output_fname(cat))))
+
+def get_archive_size(cat):
+    return os.stat(get_output_fname(cat)).st_size
+
+def get_cat_metadata(categories):
+    MD_GETTERS = [
+            ("last_archived", get_last_archived),
+            ("archive_size", get_archive_size),
+            ]
+    md = {key:{"__md_length__":len(key)} for key in [el[0] for el in MD_GETTERS]}
+
+    for cat in categories:
+        for key, fct in MD_GETTERS:
+            md[key][cat] = fct(cat)
+            md[key]["__md_length__"] = max(md[key]["__md_length__"], len(str(md[key][cat])))
+    return md, [el[0] for el in MD_GETTERS], "last_archived"
+
+##### CLI
+
+def ls(args):
+    categories = get_categories_list()
+
+    if not args.only_name:
+        md, md_key_order, md_cat_order_by = get_cat_metadata(categories)
+        print(" | ".join([key.capitalize().center(md[key]["__md_length__"]).replace("_", " ") for key in md_key_order]))
+
+    for cat in sorted(categories, key=lambda c: md[md_cat_order_by][c], reverse=True):
+        s = str()
+        if not args.only_name:
+            s += " | ".join([str(md[key][cat]).rjust(md[key]["__md_length__"]) for key in md_key_order])
+            s += " -  "
+        print(s + cat)
+
+def generate_ls_parser(parser):
+    parser.add_argument("--only-name", "-n", action="store_true")
+
+def validate_ls(args):
+    pass

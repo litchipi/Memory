@@ -4,6 +4,7 @@ from .config import validate_config, generate_config_parser, config
 from .exclude import validate_exclude, generate_exclude_parser, exclude
 from .edit import validate_edit, generate_edit_parser, edit
 from .check import validate_check, generate_check_parser, check
+from .tools import generate_ls_parser, validate_ls, ls
 
 def get_subcmd_fcts():
     return {
@@ -14,5 +15,6 @@ def get_subcmd_fcts():
         "config": [generate_config_parser, validate_config, config, "Configure backup tool"],
         "edit": [generate_edit_parser, validate_edit, edit, "Edit register of a category"],
         "check": [generate_check_parser, validate_check, check, "Check if a backup needs to be done again"],
+        "ls": [generate_ls_parser, validate_ls, ls, "List the created categories"],
         }
 
