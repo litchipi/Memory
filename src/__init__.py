@@ -18,3 +18,11 @@ def get_subcmd_fcts():
         "ls": [generate_ls_parser, validate_ls, ls, "List the created categories"],
         }
 
+def get_cmd_requires_category():
+    return {
+            "backup":True,
+            "register":False,
+            "exclude":True,
+            "edit":True,
+            "check":True
+            }

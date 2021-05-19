@@ -20,16 +20,16 @@ from src.exclude import exclude
 
 def start(args):
     handlers = get_commands_handlers()
-    if not args.subcmd:
-        handlers["__default__"](args)
-    elif args.subcmd in handlers.keys():
+    if args.subcmd in handlers.keys():
         handlers[args.subcmd](args)
     else:
         error("Subcommand not recognized: {}".format(args.subcmd))
 
 if __name__ == "__main__":
     try:
-        ret = start(parse_args())
+        start(parse_args())
+        ret = 0
     finally:
         cleanup()
+        ret = 1
     sys.exit(ret)

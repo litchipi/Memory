@@ -37,7 +37,7 @@ def check(args):
     return need_do_again
 
 def generate_check_parser(parser):
-    parser.add_argument('--category', '-c', action='append', help='The name of the category(ies) you want to check')
+    pass
 
 def validate_check(args):
     if not args.category:

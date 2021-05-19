@@ -48,8 +48,7 @@ def exclude(args):
         write_registry(regfile, reg)
 
 def generate_exclude_parser(parser):
-    parser.add_argument('--category', '-c', action='append', help='The name of the category you want to backup')
-    parser.add_argument('--exclude-type', '-x', choices=gcst.EXCLUDES_TYPES, help='The type of exclusion you want')
+    parser.add_argument('exclude_type', choices=gcst.EXCLUDES_TYPES, help='The type of exclusion you want')
     parser.add_argument("--edit", "-e", help="Edit the list using an external editor. (One by line)", action="store_true")
     parser.add_argument("excludes", help="The rules to add to exclusion list", nargs="*")
 
@@ -58,7 +57,5 @@ def validate_exclude(args):
         error("Need to specify what type of exclusion will you use")
     if not args.category:
         error("Requires a category for action \"{}\"".format(args.subcmd))
-    if len(args.category) > 1:
-        error("Cannot perform \"{}\" action on more than 1 category".format(args.subcmd))
     if not args.edit and not args.excludes:
         error("Specify a rule to exclude, or use --edit to use external editor")

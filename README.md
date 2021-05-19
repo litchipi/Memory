@@ -32,7 +32,7 @@ The registers and final archives are located in `~/.backup/`
 ## How to use it ?
 
 #### Backup the category "test"
-`memory -c test`
+`memory backup test`
 
 (pass `-f` to force backup even if not file changed)
 
@@ -42,16 +42,12 @@ The registers and final archives are located in `~/.backup/`
 (pass `-f` to force backup even if not file changed)
 
 #### Add a new file / dir to a backup "test"
-`memory register -c test file.txt`
 
-`memory register -c test dir/`
+`memory register test c file.txt`
+Will register file `file.txt` for a backup in category `test` with backup method `c`
 
-By default it will compress it without encryption
-
-#### Specify a backup method
-Use the option `-m`:
-
-`memory register -c test -m s file.txt`
+`memory register test ce dir/`
+Will register directory `dir/` for a backup in category `test` with backup method `ce`
 
 Options are:
 - s: Stored (no compression, no encryption)
@@ -62,7 +58,7 @@ Options are:
 #### Edit the files registered in an editor
 Use the option `--edit`:
 
-`memory register -c test -m ce --edit`
+`memory register test ce --edit`
 
 Will open an editor (vim by default), with 1 registered file / dir per line.
 Please use absolute path when adding more, or only use to delete some
@@ -70,24 +66,27 @@ Please use absolute path when adding more, or only use to delete some
 #### Exclude some files from being backed up
 To remove all files with the `.pyc` extension:
 
-`memory exclude -c test -x files '*.pyc'`
+`memory exclude test files '*.pyc'`
 *Note: The ' is mandatory to avoid bash replacing the wildcard with names*
 
 #### Exclude some dirs from being backup up
 To remote all `.git` dirs:
 
-`memory exclude -c test -x dirs .git`
+`memory exclude test dirs .git`
 
 #### Edit the exclusions rules in an editor
 Use the option `--edit`
 
-`memory exclude -c test -m ce --edit`
+`memory exclude test files --edit`
 
-Same as the `register --edit` option, but with exclusions rules
-
+Edit the `files` exclusion rules in an external editor
 
 #### Edit the register in a text editor
-`memory edit -c test`
+`memory edit test`
 
 #### Check if backups has to be done again
-`memory check -c test`
+`memory check test`
+
+#### List all categories
+`memory ls`
+By default, you get some metadata about the categories as well, use option `-n`

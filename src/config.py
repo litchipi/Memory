@@ -46,7 +46,6 @@ def config(args):
 def generate_config_parser(parser):
     sub = parser.add_subparsers(dest="config_cmd", help="Quick config commands")
     edit = sub.add_parser("edit", help="Edit rules")
-    parser.add_argument('--category', '-c', action='append', help='The name of the category you want to backup')
 
 def validate_config(args):
     if not args.category:

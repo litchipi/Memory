@@ -179,7 +179,6 @@ def validate_backup_all(args):
         error("Either backup all or backup some of them")
 
 def generate_backup_parser(parser):
-    parser.add_argument('--category', '-c', action='append', help='The name of the category you want to backup')
     parser.add_argument('--force', '-f', help='Force backup even if doesn\'t need to', action="store_true")
 
 def generate_backup_all_parser(parser):

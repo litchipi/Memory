@@ -3,31 +3,35 @@ import pathlib
 import argparse
 
 from src.tools import GlobalConstants as gcst
+from src.tools import get_categories_list
 
 from src.tui_toolbox import error, warning, progress
-from src import get_subcmd_fcts
+from src import get_subcmd_fcts, get_cmd_requires_category
 
 SUBCMD_FCTS = get_subcmd_fcts()
+REQUIRES_CAT = get_cmd_requires_category()
 
 def generate_parser():
     parser = argparse.ArgumentParser()
-    
     subparsers = parser.add_subparsers(dest="subcmd", help='Commands to manage backups')
 
-    SUBCMD_FCTS[gcst.DEFAULT_SUBCMD][0](parser)
     for key, data in SUBCMD_FCTS.items():
-        if key == gcst.DEFAULT_SUBCMD: continue
-        data[0](subparsers.add_parser(key, help=data[3]))
-    
+        p = subparsers.add_parser(key, help=data[3])
+        if key in REQUIRES_CAT.keys():
+            p.add_argument("category", help="The category to apply the command", type=str, nargs=1, action="store")
+        data[0](p)
     return parser
 
 def validate_args(args, parser):
-    if (not args.subcmd) and (not args.category):
+    if (not args.subcmd) and (not hasattr(args, "category")):
         parser.print_help()
         sys.exit(0)
 
+    if args.subcmd in REQUIRES_CAT and REQUIRES_CAT[args.subcmd]:
+        if not args.category[0] in get_categories_list():
+            error("Category \"{}\" does not exist".format(args.category[0]))
     if not args.subcmd:
-        SUBCMD_FCTS[gcst.DEFAULT_SUBCMD][1](args)
+        parser.print_help()
     elif args.subcmd in SUBCMD_FCTS.keys():
         SUBCMD_FCTS[args.subcmd][1](args)
     else:
@@ -40,6 +44,5 @@ def parse_args():
     return args
 
 def get_commands_handlers():
-    handlers = {key:fct[2] for key, fct in SUBCMD_FCTS.items() if key != gcst.DEFAULT_SUBCMD}
-    handlers["__default__"] = SUBCMD_FCTS[gcst.DEFAULT_SUBCMD][2]
+    handlers = {key:fct[2] for key, fct in SUBCMD_FCTS.items()}
     return handlers

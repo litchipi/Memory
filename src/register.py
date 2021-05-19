@@ -61,15 +61,12 @@ def validate_register(args):
         error("Need to specify what method to use to backup")
     if not args.category:
         error("Requires a category for action \"{}\"".format(args.subcmd))
-    if len(args.category) > 1:
-        error("Cannot perform \"{}\" action on more than 1 category".format(args.subcmd))
     if not args.edit and not args.targets:
         error("Specify a target to register, or use --edit to use external editor")
 
 def generate_register_parser(parser):
-    parser.add_argument("--method", "-m", help="Method to use to backup (a: auto (w/ file extension, method \"c\" if unknown), ce: compressed + encrypted, c: compressed, e: encrypted, s: stored).",
-            choices=gcst.BACKUP_METHODS, default='c')
-    parser.add_argument('--category', '-c', action='append', help='The name of the category you want to backup')
+    parser.add_argument("method", help="Method to use to backup (a: auto (w/ file extension, method \"c\" if unknown), ce: compressed + encrypted, c: compressed, e: encrypted, s: stored).",
+            choices=gcst.BACKUP_METHODS)
     parser.add_argument("--edit", "-e", help="Edit the list using an external editor. (One by line)", action="store_true")
     parser.add_argument("targets", help="File / Directory to register for backup", type=pathlib.Path, nargs="*")
     #TODO
