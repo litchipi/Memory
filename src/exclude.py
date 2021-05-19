@@ -27,7 +27,7 @@ def add_excludes(rules, excl_type, reg):
         if rule in reg[gcst.EXCLUDE_TEXT][excl_type]:
             warning("Rule {} already excluded, ignoring ...".format(rule))
             continue
-        progress("Excluding rule {}".format(rule), heading="{} exclusion".format(excl_type))
+        progress("Excluding {} {}".format(excl_type, rule), heading="{} exclusion".format(excl_type))
         reg[gcst.EXCLUDE_TEXT][excl_type].append(rule)
 
 def exclude(args):
