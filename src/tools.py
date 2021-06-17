@@ -38,7 +38,9 @@ def __get_password():
 
 def call_cmdline(cmd, **kwargs):
     #return subprocess.Popen(__prep_popen_cmd(cmd).split(" "),shell=False, **kwargs).wait()
-    return subprocess.Popen(__prep_popen_cmd(cmd), shell=True, **kwargs).wait()
+    return subprocess.Popen(__prep_popen_cmd(cmd), shell=True,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            **kwargs).wait()
 
 def __prep_popen_cmd(cmd):
     return re.sub(' +', ' ', cmd)

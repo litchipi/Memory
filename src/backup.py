@@ -14,98 +14,28 @@ from src.check import __check_targets_need_backup
 
 RUNNING_PROCESSES = {}
 
-def __generate_symlinks(files, wdir):
-    for f in files:
-        if os.path.isfile(f) or os.path.isdir(f):
-            lname = os.path.join(wdir, os.path.basename(sanitize_path(f)))
-            print("{} -> {}".format(f, lname))
-            os.symlink(sanitize_path(f), lname)
-        else:
-            warning("Target {} does not exist anymore, ignoring ...".format(f))
-
-def __backup_ops_dispatch(mode):
-    if mode == "ce":
-        return __backup_compressed_encrypted
-    elif mode == "c":
-        return __backup_compressed
-    elif mode == "e":
-        return __backup_encrypted
-    elif mode == "s":
-        return __backup_stored
-    else:
-        error("Cannot find backup operation for mode {}".format(mode))
-
-def __archive(outf, arch_dir, incl, excl, add_args=""):
-    os.makedirs(arch_dir)
-    __generate_symlinks(incl, arch_dir)
+def __restic_backup(category, excl, incl):
     all_excludes = generate_excludes(excl)
-    rootdir = os.path.abspath(arch_dir + "/../")
-    ret = call_cmdline("tar -c -h -v --ignore-command-error -a {} -f {} {} {}".format(add_args, 
-            os.path.relpath(outf, rootdir),
-            all_excludes,
-            os.path.relpath(arch_dir, rootdir)
-            ),
-        cwd=rootdir)
-    progress("Return code {} from commandline".format(ret), heading=outf)
-    shutil.rmtree(arch_dir, ignore_errors=True) #os.rmdir(arch_dir)
-    return ret
+    out_repo = os.path.join(gcst.BACKUP_DIR, category)
+    if not os.path.exists(os.path.join(out_repo, "config")):
+        progress("Init restic repository...", heading=category)
+        if not os.path.isdir(out_repo):
+            os.mkdir(out_repo)
+        ret = call_cmdline("RESTIC_PASSWORD={} restic init -r {}".format(__get_password(), out_repo))
+    progress("Backup in progress...", heading=category)
+    ret = call_cmdline("RESTIC_PASSWORD={} restic backup -r {} {} -- {}".format(
+        __get_password(), out_repo , all_excludes, " ".join([p for p in incl if os.path.exists(p)])))
+    if ret:
+        error("Restic command failed for category {}".format(category))
 
-def __encrypt(arch):
-    ret = call_cmdline("gpg -c --batch --passphrase {} {}".format(__get_password(), arch))
-    os.remove(arch)
-    return ret
-
-def __backup_stored(wdir, excl, incl, out="stored"):
-    ret = __archive(os.path.join(wdir, out + ".tar"), os.path.join(wdir, out), incl, excl)
-    if ret != 0: error("{} archive command failed, aborting ...".format(out))
-
-def __backup_compressed(wdir, excl, incl, out="cmp"):
-    ret = __archive(os.path.join(wdir, out + ".tar.xz"), os.path.join(wdir, out), incl, excl)
-    if ret != 0: error("{} archive command failed, aborting ...".format(out))
-
-def __backup_encrypted(wdir, excl, incl, out="enc"):
-    ret = __archive(os.path.join(wdir, out + ".tar"), os.path.join(wdir, out), incl, excl)
-    if ret != 0: error("{} archive command failed, aborting ...".format(out))
-    ret = __encrypt(os.path.join(wdir, out + ".tar"))
-    if ret != 0: error("{} encrypt command failed, aborting ...".format(out))
-
-def __backup_compressed_encrypted(wdir, excl, incl, out="enc_cmp"):
-    ret = __archive(os.path.join(wdir, out + ".tar.xz"), os.path.join(wdir, out), incl, excl)
-    if ret != 0: error("{} archive command failed, aborting ...".format(out))
-    ret = __encrypt(os.path.join(wdir, out + ".tar.xz"))
-    if ret != 0: error("{} encrypt command failed, aborting ...".format(out))
-
-def __finish_backup(category):
-    ret = call_cmdline("tar -c -h -v --ignore-command-error -a -f {} {}".format(get_output_fname(category), category), cwd=gcst.TMPDIR)
-    progress("Final archive located at \"{}\"".format(os.path.join(gcst.BACKUP_DIR, category + ".tar")), heading=category)
-    if ret != 0: error("{} final archive command failed, aborting ...".format(category))
+    progress("Success", heading=category)
 
 def __start_processes():
     for proc in RUNNING_PROCESSES.values():
         proc.start()
 
-def __create_backup_process(wdir, mode, exclude, include):
-    check_exist_else_create(wdir)
-    p = mproc.Process(target=__backup_ops_dispatch(mode), args=(wdir, exclude, include))
-    return p
-
-def finish_backups(categories):
-    processes = list()
-    progress("Finalizing backups...")
-    for cat in categories:
-        if not os.path.isdir(os.path.join(gcst.TMPDIR, cat)): continue
-        t = mproc.Process(target=__finish_backup, args=(cat,))
-        t.start()
-        processes.append(t)
-    for t in processes:
-        t.join()
-
-    for cat in categories:
-        rootdir = os.path.join(gcst.BACKUP_DIR, cat)
-        reg_fname = os.path.join(rootdir, gcst.REGISTER_FNAME)
-        reg = load_registry(reg_fname)
-        reg["last_backup"] = get_current_time()
-        write_registry(reg_fname, reg)
+def __create_backup_process(category, exclude, include):
+    return mproc.Process(target=__restic_backup, args=(category, exclude, include))
 
 def __wait_backup_finished():
     global RUNNING_PROCESSES
@@ -114,27 +44,20 @@ def __wait_backup_finished():
             t.join(timeout=gcst.THREAD_JOIN_TIMEOUT)
         RUNNING_PROCESSES = {c:t for c, t in RUNNING_PROCESSES.items() if t.is_alive()}
 
-def __backup_category(args, category, force_backup=False):
+def __backup_category(args, category):
     rootdir = os.path.join(gcst.BACKUP_DIR, category)
     reg_fname = os.path.join(rootdir, gcst.REGISTER_FNAME)
     reg = load_registry(reg_fname)
 
     global RUNNING_PROCESSES
-    for mode in gcst.BACKUP_METHODS:
-        incl = read_includes(reg, mode)
-        excl = read_all_excludes(reg)
-        if not force_backup and not __check_targets_need_backup(reg["last_backup"], incl, reg[gcst.EXCLUDE_TEXT]["dirs"]):
-            continue
-        else:
-            progress("Backup needed, starting ...", heading=category)
-        if len(incl) == 0: continue
-        if "e" in mode:
-            __get_password()
-        RUNNING_PROCESSES[category + "_" + mode] = __create_backup_process(os.path.join(gcst.TMPDIR, category), mode, excl, incl)
+    incl = read_includes(reg)
+    excl = read_all_excludes(reg)
+    if len(incl) == 0: return
+    __get_password()
+    RUNNING_PROCESSES[category] = __create_backup_process(category, excl, incl)
 
 def __prepare_bck():
     os.mkdir(gcst.TMPDIR)
-
 
 def cleanup():
     if os.path.isdir(gcst.TMPDIR):
@@ -154,10 +77,9 @@ def backup_all(args):
     categories = get_categories_list()
 
     for cat in categories:
-        __backup_category(args, cat, force_backup=(args.force or (not os.path.isfile(get_output_fname(cat)))))
+        __backup_category(args, cat)
     __start_processes()
     __wait_backup_finished()
-    finish_backups(categories)
 
 def backup(args):
     __prepare_bck()
@@ -167,10 +89,9 @@ def backup(args):
         elif not os.path.isfile(os.path.join(gcst.BACKUP_DIR, cat, gcst.REGISTER_FNAME)):
             warning("Category {} doesn't have a register, ignoring ...".format(cat))
         else:
-            __backup_category(args, cat, force_backup=(args.force or (not os.path.isfile(get_output_fname(cat)))))
+            __backup_category(args, cat)
     __start_processes()
     __wait_backup_finished()
-    finish_backups(args.category)
 
 def validate_backup(args):
     pass
