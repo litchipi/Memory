@@ -7,14 +7,14 @@ Backup tool easy to use in CLI
 
 `sudo apt install restic`
 
-`pip install toml argcomplete argparse`
+`pip install argcomplete argparse`
 
 ## How to install ?
 ./install.sh
 Will create a folder `~/.local/share/memory/` and copy the code inside, then create a symlink to `~/.local/bin/memory`
 
 ## How it works ?
-Memory creates a `register.toml` file in a specific directory for each backup category. In it, it stores what to include, andwhat to exclude.
+Memory creates a `register.json` file in a specific directory for each backup category. In it, it stores what to include, andwhat to exclude.
 When asking to backup, the script reads the register, and format the parameters to be passed the the `restic` command (backup & archiving tool).
 
 The registers and resulting restic repositories are located in `~/.backup/`
@@ -33,23 +33,13 @@ Please check the `restic` documentation for usage of repositories.
 (pass `-f` to force backup even if not file changed)
 
 #### Add a new file / dir to a backup "test"
-
-`memory register test c file.txt`
-Will register file `file.txt` for a backup in category `test` with backup method `c`
-
-`memory register test ce dir/`
-Will register directory `dir/` for a backup in category `test` with backup method `ce`
-
-Options are:
-- s: Stored (no compression, no encryption)
-- c: Compressed (compression, no encryption) DEFAULT
-- e: Encrypted (no compression, encryption)
-- ce: Compressed + Encrypted
+`memory register test file.txt`
+Will register file `file.txt` for a backup in category `test`
 
 #### Edit the files registered in an editor
 Use the option `--edit`:
 
-`memory register test ce --edit`
+`memory register test --edit`
 
 Will open an editor (vim by default), with 1 registered file / dir per line.
 Please use absolute path when adding more, or only use to delete some
@@ -80,7 +70,8 @@ Edit the `files` exclusion rules in an external editor
 
 #### List all categories
 `memory ls`
-By default, you get some metadata about the categories as well, use option `-n`
+By default, you get some metadata about the categories as well, use option `-n` if you want only the
+raw list of categories
 
 #### Inspect a directory in registries
 `memory inspect ~`
