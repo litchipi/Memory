@@ -175,6 +175,18 @@ def write_registry(fname, reg):
     with open(fname, "w") as f:
         toml.dump(reg, f)
 
+def get_category_registry_fname(category, create=True):
+    rootdir = os.path.join(GlobalConstants.BACKUP_DIR, category)
+    if create:
+            check_exist_else_create(rootdir)
+    reg_fname = os.path.join(rootdir, GlobalConstants.REGISTER_FNAME)
+    if create and (not os.path.isfile(reg_fname)):
+        setup_default_registry(reg_fname)
+    return reg_fname
+
+def load_category_registry(category, create=True):
+    return load_registry(get_category_registry_fname(category, create=create))
+
 def load_registry(fname):
     with open(fname, "r") as f:
         reg = toml.load(f)
@@ -247,6 +259,7 @@ def ls(args):
         sort_fct = lambda c: md[md_cat_order_by][c]
     else:
         sort_fct = lambda c: c
+
     for cat in sorted(categories, key=sort_fct, reverse=True):
         s = str()
         if not args.only_name:
