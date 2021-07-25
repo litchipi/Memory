@@ -34,6 +34,7 @@ def loop_edit_config(fname):
         edit_list_in_plaintext(fname, cfg)
 
 
+#TODO   Implement GlobalConstants modification through "config" cli cmd
 
 
 ##### CLI

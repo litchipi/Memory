@@ -65,3 +65,4 @@ def generate_register_parser(parser):
     parser.add_argument("targets", help="File / Directory to register for backup", type=pathlib.Path, nargs="*")
     #TODO
     #       Register from list in file
+    #       Register from user input in file with auto method detection

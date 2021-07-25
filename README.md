@@ -7,7 +7,7 @@ Backup tool easy to use in CLI
 
 `sudo apt install tar gpg xz-utils python3`
 
-`pip install toml`
+`pip install toml argcomplete argparse`
 
 ## How to install ?
 ./install.sh
