@@ -7,7 +7,7 @@ import subprocess
 
 from src.tui_toolbox import progress, error, warning
 from src.tools import GlobalConstants as gcst
-from src.tools import __get_password, check_exist_else_create, load_registry, call_cmdline, get_current_time, write_registry, sanitize_path, get_categories_list
+from src.tools import __get_password, check_exist_else_create, load_category_registry, call_cmdline, get_current_time, write_registry, sanitize_path, get_categories_list
 from src.register import read_includes
 from src.exclude import read_all_excludes, generate_excludes
 from src.check import __check_targets_need_backup
@@ -45,9 +45,7 @@ def __wait_backup_finished():
         RUNNING_PROCESSES = {c:t for c, t in RUNNING_PROCESSES.items() if t.is_alive()}
 
 def __backup_category(args, category):
-    rootdir = os.path.join(gcst.BACKUP_DIR, category)
-    reg_fname = os.path.join(rootdir, gcst.REGISTER_FNAME)
-    reg = load_registry(reg_fname)
+    reg = load_category_registry(category, create=False)
 
     global RUNNING_PROCESSES
     incl = read_includes(reg)

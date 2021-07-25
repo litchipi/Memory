@@ -4,8 +4,7 @@ import pathlib
 
 from src.tui_toolbox import error, warning, progress
 from src.tools import GlobalConstants as gcst
-from src.tools import check_exist_else_create, edit_list_in_plaintext
-from src.tools import setup_default_registry, load_registry, write_registry
+from src.tools import *
 
 def read_includes(reg):
     return reg[gcst.INCLUDE_TEXT]
@@ -35,13 +34,7 @@ def add_targets(targets, reg):
 ##### CLI
 
 def register(args):
-    rootdir = os.path.join(gcst.BACKUP_DIR, args.category[0])
-    check_exist_else_create(rootdir)
-
-    regfile = os.path.join(rootdir, gcst.REGISTER_FNAME)
-    if not os.path.isfile(regfile):
-        setup_default_registry(regfile)
-
+    regfile = get_category_registry_fname(args.category[0])
     reg = load_registry(regfile)
 
     # Purging paths that doesn't exist anymore

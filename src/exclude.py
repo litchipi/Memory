@@ -2,7 +2,7 @@ import os
 import pathlib
 
 from src.tools import GlobalConstants as gcst
-from src.tools import check_exist_else_create, setup_default_registry, write_registry, load_registry, edit_list_in_plaintext
+from src.tools import *
 from src.tui_toolbox import error, progress, warning
 
 def read_excludes(reg, excl):
@@ -42,13 +42,7 @@ def add_excludes(rules, excl_type, reg):
         reg[gcst.EXCLUDE_TEXT][excl_type].append(rule)
 
 def exclude(args):
-    rootdir = os.path.join(gcst.BACKUP_DIR, args.category[0])
-    check_exist_else_create(rootdir)
-    
-    regfile = os.path.join(rootdir, gcst.REGISTER_FNAME)
-    if not os.path.isfile(regfile):
-        setup_default_registry(regfile)
-
+    regfile = get_category_registry_fname(args.category[0])
     reg = load_registry(regfile)
 
     if args.edit:
