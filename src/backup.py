@@ -7,7 +7,7 @@ import subprocess
 
 from src.tui_toolbox import progress, error, warning
 from src.tools import GlobalConstants as gcst
-from src.tools import __get_password, check_exist_else_create, load_registry, call_cmdline, get_current_time, write_registry, sanitize_path, get_categories_list, get_output_fname
+from src.tools import __get_password, check_exist_else_create, load_registry, call_cmdline, get_current_time, write_registry, sanitize_path, get_categories_list
 from src.register import read_includes
 from src.exclude import read_all_excludes, generate_excludes
 from src.check import __check_targets_need_backup

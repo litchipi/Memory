@@ -9,7 +9,7 @@ def edit(args):
     regfile = os.path.join(rootdir, gcst.REGISTER_FNAME)
     if not os.path.isfile(regfile):
         setup_default_registry(regfile)
-    call_cmdline(gcst.EDITOR_CMD + regfile)
+    call_cmdline(gcst.EDITOR_CMD + regfile, stdout=None, stderr=None)
 
 def generate_edit_parser(parser):
     sub = parser.add_subparsers(dest="edit_cmd", help="Edit the register of a category")

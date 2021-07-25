@@ -1,6 +1,7 @@
 import os
 import re
 import toml
+import glob
 import time
 import string
 import random
@@ -15,15 +16,14 @@ class GlobalConstants:
     TMPDIR = "/tmp/tmp.memory/"
     REGISTER_FNAME = "register.toml"
     BACKUP_DIR = os.path.join(os.path.expanduser("~"), ".backup")
-    BACKUP_METHODS = ["c", "e", "ce", "s"]
-    EXCLUDES_TYPES = ["files", "dirs", "substr"]
+    EXCLUDES_TYPES = ["files", "dirs", "substr", "path"]
     THREAD_JOIN_TIMEOUT=0.1
     EDITOR_CMD = "vim "
     CONFIG_FORBIDDEN_CHARS = "{}[],;"
     DEFAULT_CAT_CONFIG = {}
     INCLUDE_TEXT = "include"
     EXCLUDE_TEXT = "exclude"
-    DEFAULT_CAT_REGISTER = {INCLUDE_TEXT:{m:list() for m in BACKUP_METHODS}, EXCLUDE_TEXT:{t:list() for t in EXCLUDES_TYPES}}
+    DEFAULT_CAT_REGISTER = {INCLUDE_TEXT: [], EXCLUDE_TEXT:{t:list() for t in EXCLUDES_TYPES}}
     DEFAULT_SUBCMD = "backup"
 
 __PWD = [threading.Semaphore(), None]
@@ -36,10 +36,16 @@ def __get_password():
     __PWD[0].release()
     return __PWD[1]
 
-def call_cmdline(cmd, **kwargs):
+def cmd_get_output(cmd, **kwargs):
+    p = subprocess.Popen(__prep_popen_cmd(cmd), shell=True,
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            **kwargs)
+    return p.communicate()[0]
+
+def call_cmdline(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **kwargs):
     #return subprocess.Popen(__prep_popen_cmd(cmd).split(" "),shell=False, **kwargs).wait()
     return subprocess.Popen(__prep_popen_cmd(cmd), shell=True,
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            stdout=stdout, stderr=stderr,
             **kwargs).wait()
 
 def __prep_popen_cmd(cmd):
@@ -101,7 +107,7 @@ def __edit_list_in_plaintext(fname, key_name, name="unknown", **kwargs):
     tmp_fname = os.path.join("/tmp/", tmpdir, key_name)
     dump_to_user(tmp_fname, data[key_name])
 
-    call_cmdline(GlobalConstants.EDITOR_CMD + tmp_fname)
+    call_cmdline(GlobalConstants.EDITOR_CMD + tmp_fname, stdout=None, stderr=None)
 
     user_input = load_user_input(tmp_fname, **kwargs)
     rm_tmp_dir(tmpdir)
@@ -192,29 +198,34 @@ def check_exist_else_create(path):
     if not os.path.isdir(path):
         os.makedirs(path)
 
-def get_output_fname(cat):
-    return os.path.join(GlobalConstants.BACKUP_DIR, cat + ".tar")
+def get_output_latest_snapshot(cat):
+    snapdir = os.path.join(GlobalConstants.BACKUP_DIR, cat, "snapshots")
+    list_of_files = glob.glob(snapdir + '/*')
+    latest_file = max(list_of_files, key=os.path.getctime)
+    return latest_file
 
 def get_categories_list():
     categories = list()
-    for _, dirs, _ in os.walk(GlobalConstants.BACKUP_DIR):
-        for d in [d for d in dirs if os.path.isfile(os.path.join(GlobalConstants.BACKUP_DIR, d, GlobalConstants.REGISTER_FNAME))]:
+    for root, dirs, _ in os.walk(GlobalConstants.BACKUP_DIR):
+        if ".register_bck" in root:
+            continue
+        for d in [d for d in dirs
+                if os.path.isfile(
+                    os.path.join(GlobalConstants.BACKUP_DIR, d, GlobalConstants.REGISTER_FNAME)
+                    )]:
             categories.append(d)
     return categories
 
 def get_last_archived(cat, time_format="%d/%m/%y %H:%M:%S"):
-    if not os.path.isfile(get_output_fname(cat)):
-        return "Never"
-    return time.strftime(time_format, time.gmtime(os.path.getmtime(get_output_fname(cat))))
+    return time.strftime(time_format, time.gmtime(os.path.getmtime(get_output_latest_snapshot(cat))))
 
 def get_archive_size(cat):
-    if not os.path.isfile(get_output_fname(cat)):
-        return "Not created"
-    return os.stat(get_output_fname(cat)).st_size
+    ret = cmd_get_output('du -sh ' + os.path.join(GlobalConstants.BACKUP_DIR, cat))
+    return ret.decode().split()[0]
 
 def get_cat_metadata(categories):
     MD_GETTERS = [
-            ("last_archived", get_last_archived),
+            ("last_updated", get_last_archived),
             ("archive_size", get_archive_size),
             ]
     md = {key:{"__md_length__":len(key)} for key in [el[0] for el in MD_GETTERS]}
@@ -223,7 +234,7 @@ def get_cat_metadata(categories):
         for key, fct in MD_GETTERS:
             md[key][cat] = fct(cat)
             md[key]["__md_length__"] = max(md[key]["__md_length__"], len(str(md[key][cat])))
-    return md, [el[0] for el in MD_GETTERS], "last_archived"
+    return md, [el[0] for el in MD_GETTERS], "last_updated"
 
 ##### CLI
 

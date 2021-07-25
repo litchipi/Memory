@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 from src.tools import GlobalConstants as gcst
 from src.tools import check_exist_else_create, setup_default_registry, write_registry, load_registry, edit_list_in_plaintext
@@ -14,20 +15,30 @@ def read_all_excludes(reg):
     return reg[gcst.EXCLUDE_TEXT]
 
 def generate_excludes(excl):
-    for key in ["dirs", "files", "substr"]:
+    for key in gcst.EXCLUDES_TYPES:
         if key not in excl.keys():
             excl[key] = []
-    exclude_dirs = ["--exclude=\"{}/**\"".format(d) for d in excl["dirs"]]
-    exclude_files= ["--exclude=\"{}\"".format(f) for f in excl["files"]]
-    exclude_substr=["--exclude=\"*{}*\"".format(s) for s in excl["substr"]]
-    return " ".join([" ".join(e) for e in [exclude_dirs, exclude_files, exclude_substr]])
+    
+    excludes = list()
+    for excl_rule in excl.keys():
+        if excl_rule == "dirs":
+            excludes.extend(["--exclude=\"{}/**\"".format(d) for d in excl[excl_rule]])
+        elif excl_rule == "substr":
+            excludes.extend(["--exclude=\"*{}*\"".format(s) for s in excl[excl_rule]])
+        else:
+            excludes.extend(["--exclude=\"{}\"".format(f) for f in excl[excl_rule]])
+    return " ".join(excludes)
 
 def add_excludes(rules, excl_type, reg):
     for rule in rules:
+        if excl_type not in reg[gcst.EXCLUDE_TEXT]:
+            reg[gcst.EXCLUDE_TEXT][excl_type] = list()
         if rule in reg[gcst.EXCLUDE_TEXT][excl_type]:
             warning("Rule {} already excluded, ignoring ...".format(rule))
             continue
         progress("Excluding {} {}".format(excl_type, rule), heading="{} exclusion".format(excl_type))
+        if excl_type == "path":
+            rule = str(pathlib.Path(rule).absolute())
         reg[gcst.EXCLUDE_TEXT][excl_type].append(rule)
 
 def exclude(args):
