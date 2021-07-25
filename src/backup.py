@@ -7,7 +7,7 @@ import subprocess
 
 from src.tui_toolbox import progress, error, warning
 from src.tools import GlobalConstants as gcst
-from src.tools import __get_password, check_exist_else_create, load_category_registry, call_cmdline, get_current_time, write_registry, sanitize_path, get_categories_list
+from src.tools import *
 from src.register import read_includes
 from src.exclude import read_all_excludes, generate_excludes
 from src.check import __check_targets_need_backup
@@ -21,10 +21,10 @@ def __restic_backup(category, excl, incl):
         progress("Init restic repository...", heading=category)
         if not os.path.isdir(out_repo):
             os.mkdir(out_repo)
-        ret = call_cmdline("RESTIC_PASSWORD={} restic init -r {}".format(__get_password(), out_repo))
+        ret = call_cmdline("RESTIC_PASSWORD={} restic init -r {}".format(get_password(), out_repo))
     progress("Backup in progress...", heading=category)
     ret = call_cmdline("RESTIC_PASSWORD={} restic backup -r {} {} -- {}".format(
-        __get_password(), out_repo , all_excludes, " ".join([p for p in incl if os.path.exists(p)])))
+        get_password(), out_repo , all_excludes, " ".join([p for p in incl if os.path.exists(p)])))
     if ret:
         error("Restic command failed for category {}".format(category))
 
@@ -51,27 +51,14 @@ def __backup_category(args, category):
     incl = read_includes(reg)
     excl = read_all_excludes(reg)
     if len(incl) == 0: return
-    __get_password()
+    get_password()
     RUNNING_PROCESSES[category] = __create_backup_process(category, excl, incl)
-
-def __prepare_bck():
-    os.mkdir(gcst.TMPDIR)
-
-def cleanup():
-    if os.path.isdir(gcst.TMPDIR):
-        if os.path.abspath(gcst.TMPDIR)[:5] == '/tmp/':
-            shutil.rmtree(gcst.TMPDIR, ignore_errors=True)
-        else:
-            error("Attempt to cleanup folder not located in /tmp/")
 
 
 
 
 ##### CLI
-
 def backup_all(args):
-    __prepare_bck()
-
     categories = get_categories_list()
 
     for cat in categories:
@@ -80,7 +67,6 @@ def backup_all(args):
     __wait_backup_finished()
 
 def backup(args):
-    __prepare_bck()
     for cat in args.category:
         if not os.path.isdir(os.path.join(gcst.BACKUP_DIR, cat)):
             warning("Category {} doesn't exist, ignoring ...".format(cat))

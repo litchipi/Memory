@@ -1,6 +1,6 @@
 import os
 import re
-import toml
+import json
 import glob
 import time
 import string
@@ -14,7 +14,7 @@ from src.tui_toolbox import error, warning, progress
 
 class GlobalConstants:
     TMPDIR = "/tmp/tmp.memory/"
-    REGISTER_FNAME = "register.toml"
+    REGISTER_FNAME = "register.json"
     BACKUP_DIR = os.path.join(os.path.expanduser("~"), ".backup")
     EXCLUDES_TYPES = ["files", "dirs", "substr", "path"]
     THREAD_JOIN_TIMEOUT=0.1
@@ -28,7 +28,7 @@ class GlobalConstants:
 
 __PWD = [threading.Semaphore(), None]
 
-def __get_password():
+def get_password():
     global __PWD
     __PWD[0].acquire()
     if __PWD[1] is None:
@@ -69,11 +69,11 @@ def sanitize_path(path):
 
 def extract_from_file(fname):
     with open(fname, "r") as f:
-        return toml.load(f)
+        return json.load(f)
 
 def export_to_file(fname, data):
     with open(fname, "w") as f:
-        toml.dump(data, f)
+        json.dump(data, f, indent=4)
 
 def edit_list_in_plaintext(fname, keys_names, name="unknown", recurs=0, dirname=None, **kwargs):
     if len(keys_names) > 1:
@@ -138,28 +138,6 @@ def __validate_load_userinp(data):
 
 
 
-########" Configuration
-
-def update_config(cfg_fname, key_name, data):
-    with open(cfg_fname, "r") as f:
-        parsed_toml = toml.load(f)
-    try:
-        parsed_toml[key_name] = data
-    except KeyError:
-        error("Config name \"{}\" does not exist in configuration".format(key_name))
-    with open(cfg_fname, "w") as f:
-        toml.dump(parsed_toml, f)
-
-def extract_from_config(cfg_fname, key_name):
-    with open(cfg_fname, "r") as f:
-        parsed_toml = toml.load(f)
-    try:
-        parsed_toml[key_name]
-    except KeyError:
-        error("Config name \"{}\" does not exist in configuration".format(key_name))
-
-
-
 ########## Registry
 
 def get_current_time():
@@ -168,12 +146,7 @@ def get_current_time():
 def setup_default_registry(fname):
     default = dict.copy(GlobalConstants.DEFAULT_CAT_REGISTER)
     default["last_backup"] = get_current_time()
-    with open(fname, "w") as f:
-        toml.dump(default, f)
-
-def write_registry(fname, reg):
-    with open(fname, "w") as f:
-        toml.dump(reg, f)
+    export_to_file(fname, default)
 
 def get_category_registry_fname(category, create=True):
     rootdir = os.path.join(GlobalConstants.BACKUP_DIR, category)
@@ -188,12 +161,11 @@ def load_category_registry(category, create=True):
     return load_registry(get_category_registry_fname(category, create=create))
 
 def load_registry(fname):
-    with open(fname, "r") as f:
-        reg = toml.load(f)
+    reg = extract_from_file(fname)
     __validate_register(reg)
     if "last_backup" not in reg.keys():
         reg["last_backup"] = 0
-        write_registry(fname, reg)
+        export_to_file(fname, reg)
     return reg
 
 def __validate_register(reg):

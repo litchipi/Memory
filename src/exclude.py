@@ -50,7 +50,7 @@ def exclude(args):
         edit_list_in_plaintext(regfile, [gcst.EXCLUDE_TEXT, args.exclude_type])
     else:
         add_excludes(args.excludes, args.exclude_type, reg)
-        write_registry(regfile, reg)
+        export_to_file(regfile, reg)
 
 def generate_exclude_parser(parser):
     parser.add_argument('exclude_type', choices=gcst.EXCLUDES_TYPES, help='The type of exclusion you want')

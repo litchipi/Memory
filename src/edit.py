@@ -2,7 +2,7 @@ import os
 
 from src.tui_toolbox import error, warning, progress
 from src.tools import GlobalConstants as gcst
-from src.tools import check_category_exist, call_cmdline
+from src.tools import check_category_exist, call_cmdline, setup_default_registry
 
 def edit(args):
     rootdir = os.path.join(gcst.BACKUP_DIR, args.category[0])

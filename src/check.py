@@ -29,9 +29,10 @@ def __check_targets_need_backup(last_backup_time, incl, dir_excludes):
             return True
     return False
 
+#TODO   Does not work properly
 def check(args):
     new_bck = False
-    need_do_again = {cat:{mode:False for mode in gcst.BACKUP_METHODS} for cat in args.category}
+    need_do_again = {cat:False for cat in args.category}
     for cat in args.category:
         rootdir = os.path.join(gcst.BACKUP_DIR, cat)
         regfile = os.path.join(rootdir, gcst.REGISTER_FNAME)
@@ -39,15 +40,14 @@ def check(args):
             setup_default_registry(regfile)
         reg = load_registry(regfile)
         
-        for mode in gcst.BACKUP_METHODS:
-            incl = read_includes(reg, mode)
-            for target in incl:
-                if check_need_backup(reg["last_backup"], target, reg[gcst.EXCLUDE_TEXT]["dirs"]):
-                    need_do_again[cat][mode] = True
-                    break
-            if need_do_again[cat][mode]:
-                progress("Need a new backup for mode \"{}\"".format(mode), heading=cat)
-                new_bck = True
+        incl = read_includes(reg)
+        for target in incl:
+            if check_need_backup(reg["last_backup"], target, reg[gcst.EXCLUDE_TEXT]["dirs"]):
+                need_do_again[cat] = True
+                break
+        if need_do_again[cat]:
+            progress("Need a new backup", heading=cat)
+            new_bck = True
 
     if not new_bck:
         progress("No categories need any new backup")

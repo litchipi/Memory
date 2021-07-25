@@ -1,5 +1,4 @@
 import os
-import toml
 import pathlib
 
 from src.tui_toolbox import error, warning, progress
@@ -45,7 +44,7 @@ def register(args):
         edit_list_in_plaintext(regfile, [gcst.INCLUDE_TEXT], validate_fct=validate_entry, transform_fct=expand_path)
     else:
         add_targets(args.targets, reg)
-        write_registry(regfile, reg)
+        export_to_file(regfile, reg)
 
 def validate_register(args):
     if not args.category:

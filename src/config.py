@@ -5,7 +5,7 @@ import subprocess
 from src.tools import GlobalConstants as gcst
 
 from src.tui_toolbox import error, progress, warning
-from src.tools import edit_list_in_plaintext
+from src.tools import edit_list_in_plaintext, export_to_file
 
 def get_config_fname(cat):
     return os.path.join(gcst.BACKUP_DIR, cat, "config.toml")
@@ -15,8 +15,7 @@ def create_config_if_not_exist(cat):
         setup_default_config(cat)
 
 def setup_default_config(cat):
-    with open(get_config_fname(cat), "w") as f:
-        toml.dump(gcst.DEFAULT_CAT_CONFIG, f)
+    export_to_file(get_config_fname(cat), gcst.DEFAULT_CAT_CONFIG)
 
 def loop_edit_config(fname):
     if len(gcst.DEFAULT_CAT_CONFIG.keys()) == 0:

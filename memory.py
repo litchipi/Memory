@@ -12,7 +12,7 @@ import subprocess
 
 from src.tui_toolbox import error, warning, progress, flow_display
 from src.cli import parse_args, get_commands_handlers
-from src.backup import backup, backup_all, cleanup
+from src.backup import backup, backup_all
 from src.tools import check_exist_else_create
 from src.config import config
 from src.register import register
@@ -30,6 +30,5 @@ if __name__ == "__main__":
         start(parse_args())
         ret = 0
     finally:
-        cleanup()
         ret = 1
     sys.exit(ret)
