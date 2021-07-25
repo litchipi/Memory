@@ -5,7 +5,7 @@ Backup tool easy to use in CLI
 
 ## Requierements
 
-`sudo apt install tar gpg xz-utils python3`
+`sudo apt install restic`
 
 `pip install toml argcomplete argparse`
 
@@ -14,20 +14,11 @@ Backup tool easy to use in CLI
 Will create a folder `~/.local/share/memory/` and copy the code inside, then create a symlink to `~/.local/bin/memory`
 
 ## How it works ?
-Memory creates a `register.toml` file in a specific directory for each backup category. In it, it stores what to include, what to exclude and the last backup time.
-When asking to backup, the script reads the register, and format the parameters to be passed the the `tar` command (for archiving / compression) or the `gpg` command (for encryption).
-The files are first putted as symlinks inside a tmp directory, so the file archive doesn't have the full path.
+Memory creates a `register.toml` file in a specific directory for each backup category. In it, it stores what to include, andwhat to exclude.
+When asking to backup, the script reads the register, and format the parameters to be passed the the `restic` command (backup & archiving tool).
 
-The final archive looks like:
-```
-category.tar
-| enc.tar.gpg
-| cmp.tar.xz
-| stored.tar
-| enc_cmp.tar.xz.gpg
-```
-
-The registers and final archives are located in `~/.backup/`
+The registers and resulting restic repositories are located in `~/.backup/`
+Please check the `restic` documentation for usage of repositories.
 
 ## How to use it ?
 
@@ -90,3 +81,10 @@ Edit the `files` exclusion rules in an external editor
 #### List all categories
 `memory ls`
 By default, you get some metadata about the categories as well, use option `-n`
+
+#### Inspect a directory in registries
+`memory inspect ~`
+Will check if the given path is registered inside one or more categories.
+You can pass options `-i` to get more info (such as the latest snapshot taken), and the `-l` option
+to inspect every file and directory inside the path given (will perform normal inspect if path is a
+file)
