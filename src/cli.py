@@ -2,7 +2,6 @@ import sys
 import pathlib
 import argparse
 
-from src.tools import GlobalConstants as gcst
 from src.tools import get_categories_list
 
 from src.tui_toolbox import error, warning, progress
@@ -18,7 +17,10 @@ def generate_parser():
     for key, data in SUBCMD_FCTS.items():
         p = subparsers.add_parser(key, help=data[3])
         if key in REQUIRES_CAT.keys():
-            p.add_argument("category", help="The category to apply the command", type=str, nargs=1, action="store")
+            p.add_argument("category", type=str, nargs=1, action="store",
+                    help="The category to apply the command")
+
+        # Generate parser for subcmd, call function generate_<name>_parser
         data[0](p)
     return parser
 
@@ -33,6 +35,7 @@ def validate_args(args, parser):
     if not args.subcmd:
         parser.print_help()
     elif args.subcmd in SUBCMD_FCTS.keys():
+        # Validate args, call function validate_<name>
         SUBCMD_FCTS[args.subcmd][1](args)
     else:
         error("Subcommand {} not recognized".format(args.subcmd))
@@ -44,5 +47,6 @@ def parse_args():
     return args
 
 def get_commands_handlers():
+    # Returns the functions for each subcmd to be called 
     handlers = {key:fct[2] for key, fct in SUBCMD_FCTS.items()}
     return handlers

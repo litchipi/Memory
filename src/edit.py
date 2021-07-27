@@ -2,11 +2,10 @@ import os
 
 from src.tui_toolbox import error, warning, progress
 from src.tools import GlobalConstants as gcst
-from src.tools import check_category_exist, call_cmdline, setup_default_registry
+from src.tools import *
 
 def edit(args):
-    rootdir = os.path.join(gcst.BACKUP_DIR, args.category[0])
-    regfile = os.path.join(rootdir, gcst.REGISTER_FNAME)
+    regfile = get_category_registry_fname(args.category[0])
     if not os.path.isfile(regfile):
         setup_default_registry(regfile)
     call_cmdline(gcst.EDITOR_CMD + regfile, stdout=None, stderr=None)

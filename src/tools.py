@@ -148,8 +148,11 @@ def setup_default_registry(fname):
     default["last_backup"] = get_current_time()
     export_to_file(fname, default)
 
+def get_category_repodir(category):
+    return os.path.join(GlobalConstants.BACKUP_DIR, category)
+
 def get_category_registry_fname(category, create=True):
-    rootdir = os.path.join(GlobalConstants.BACKUP_DIR, category)
+    rootdir = get_category_repodir(category)
     if create:
             check_exist_else_create(rootdir)
     reg_fname = os.path.join(rootdir, GlobalConstants.REGISTER_FNAME)

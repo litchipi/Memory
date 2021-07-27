@@ -5,17 +5,14 @@ import subprocess
 from src.tools import GlobalConstants as gcst
 
 from src.tui_toolbox import error, progress, warning
-from src.tools import edit_list_in_plaintext, export_to_file
-
-def get_config_fname(cat):
-    return os.path.join(gcst.BACKUP_DIR, cat, "config.toml")
+from src.tools import *
 
 def create_config_if_not_exist(cat):
-    if not os.path.isfile(get_config_fname(cat)):
+    if not os.path.isfile(get_category_registry_fname(cat)):
         setup_default_config(cat)
 
 def setup_default_config(cat):
-    export_to_file(get_config_fname(cat), gcst.DEFAULT_CAT_CONFIG)
+    export_to_file(get_category_registry_fname(cat), gcst.DEFAULT_CAT_CONFIG)
 
 def loop_edit_config(fname):
     if len(gcst.DEFAULT_CAT_CONFIG.keys()) == 0:
@@ -41,7 +38,7 @@ def loop_edit_config(fname):
 def config(args):
     if args.config_cmd == "edit":
         create_config_if_not_exist(args.category[0])
-        loop_edit_config(get_config_fname(args.category[0]))
+        loop_edit_config(get_category_registry_fname(args.category[0]))
 
 def generate_config_parser(parser):
     sub = parser.add_subparsers(dest="config_cmd", help="Quick config commands")

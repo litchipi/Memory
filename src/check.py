@@ -1,7 +1,7 @@
 import os
 
 from src.tools import GlobalConstants as gcst
-from src.tools import setup_default_registry, load_registry
+from src.tools import *
 from src.register import read_includes
 from src.tui_toolbox import error, progress, warning
 
@@ -34,11 +34,7 @@ def check(args):
     new_bck = False
     need_do_again = {cat:False for cat in args.category}
     for cat in args.category:
-        rootdir = os.path.join(gcst.BACKUP_DIR, cat)
-        regfile = os.path.join(rootdir, gcst.REGISTER_FNAME)
-        if not os.path.isfile(regfile):
-            setup_default_registry(regfile)
-        reg = load_registry(regfile)
+        reg = load_category_registry(cat, create=True)
         
         incl = read_includes(reg)
         for target in incl:

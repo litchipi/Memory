@@ -16,7 +16,7 @@ RUNNING_PROCESSES = {}
 
 def __restic_backup(category, excl, incl):
     all_excludes = generate_excludes(excl)
-    out_repo = os.path.join(gcst.BACKUP_DIR, category)
+    out_repo = get_category_repodir(category)
     if not os.path.exists(os.path.join(out_repo, "config")):
         progress("Init restic repository...", heading=category)
         if not os.path.isdir(out_repo):
@@ -68,9 +68,9 @@ def backup_all(args):
 
 def backup(args):
     for cat in args.category:
-        if not os.path.isdir(os.path.join(gcst.BACKUP_DIR, cat)):
+        if not os.path.isdir(get_category_repodir(cat)):
             warning("Category {} doesn't exist, ignoring ...".format(cat))
-        elif not os.path.isfile(os.path.join(gcst.BACKUP_DIR, cat, gcst.REGISTER_FNAME)):
+        elif not os.path.isfile(get_category_registry_fname(cat)):
             warning("Category {} doesn't have a register, ignoring ...".format(cat))
         else:
             __backup_category(args, cat)
