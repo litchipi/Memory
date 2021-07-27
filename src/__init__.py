@@ -6,6 +6,7 @@ from .edit import validate_edit, generate_edit_parser, edit
 from .check import validate_check, generate_check_parser, check
 from .tools import generate_ls_parser, validate_ls, ls
 from .inspect import generate_inspect_parser, validate_inspect, inspect
+from .prune import generate_prune_parser, validate_prune, prune, prune_all
 
 def get_subcmd_fcts():
     return {
@@ -18,13 +19,20 @@ def get_subcmd_fcts():
         "check": [generate_check_parser, validate_check, check, "Check if a backup needs to be done again"],
         "ls": [generate_ls_parser, validate_ls, ls, "List the created categories"],
         "inspect":[generate_inspect_parser, validate_inspect, inspect, "Inspect the given path for existing backup rules"],
+        "prune":[generate_prune_parser, validate_prune, prune, "Remove old snapshots from the backup"],
+        "prune-all":[generate_prune_parser, validate_prune, prune_all, "Remove old snapshots from the backup of all existing categories"],
         }
 
 def get_cmd_requires_category():
+    """
+        Key:        A command that expect a category as parameter
+        Value:      Wether that category has to exist or not
+    """
     return {
             "backup":True,
             "register":False,
             "exclude":True,
             "edit":True,
-            "check":True
+            "check":True,
+            "prune":True,
             }
