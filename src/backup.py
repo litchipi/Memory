@@ -5,7 +5,7 @@ import shutil
 import multiprocessing as mproc
 import subprocess
 
-from src.tui_toolbox import progress, error, warning
+from src.tui_toolbox import progress, error, warning, debug
 from src.tools import GlobalConstants as gcst
 from src.tools import *
 from src.register import read_includes
@@ -45,13 +45,17 @@ def __wait_backup_finished():
         RUNNING_PROCESSES = {c:t for c, t in RUNNING_PROCESSES.items() if t.is_alive()}
 
 def __backup_category(args, category):
+    debug("Loading registry ...", heading=category)
     reg = load_category_registry(category, create=False)
 
     global RUNNING_PROCESSES
+    debug("Loading includes ...", heading=category)
     incl = read_includes(reg)
+    debug("Loading excludes ...", heading=category)
     excl = read_all_excludes(reg)
     if len(incl) == 0: return
     get_password()
+    debug("Starting process ...", heading=category)
     RUNNING_PROCESSES[category] = __create_backup_process(category, excl, incl)
 
 
