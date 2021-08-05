@@ -73,7 +73,7 @@ def extract_from_file(fname):
 
 def export_to_file(fname, data):
     with open(fname, "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
 def edit_list_in_plaintext(fname, keys_names, name="unknown", recurs=0, dirname=None, **kwargs):
     if len(keys_names) > 1:
