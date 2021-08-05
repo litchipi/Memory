@@ -1,6 +1,8 @@
 
 import sys
 
+DEBUG_ALLOWED = False
+
 COLORS = {
         "white":"99",
         "red":"91",
@@ -39,6 +41,14 @@ def progress(msg, color="blue", heading=None):
         s = create_style(color) + "--- " + RESET
     s += create_style(color) + str(msg) + RESET
     print(s)
+
+def debug(msg, color="purple", heading=None):
+    if DEBUG_ALLOWED:
+        progress(msg, color=color, heading=heading)
+
+def set_debug(state):
+    global DEBUG_ALLOWED
+    DEBUG_ALLOWED = state
 
 def flow_display(msg, heading=None, color="purple", n=0):
     s = ""

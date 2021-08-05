@@ -4,7 +4,7 @@ import argparse
 
 from src.tools import get_categories_list
 
-from src.tui_toolbox import error, warning, progress
+from src.tui_toolbox import error, warning, progress, set_debug, debug
 from src import get_subcmd_fcts, get_cmd_requires_category
 
 SUBCMD_FCTS = get_subcmd_fcts()
@@ -12,6 +12,8 @@ REQUIRES_CAT = get_cmd_requires_category()
 
 def generate_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", "-D", action="store_true",
+            help="Display debug informations")
     subparsers = parser.add_subparsers(dest="subcmd", help='Commands to manage backups')
 
     for key, data in SUBCMD_FCTS.items():
@@ -43,6 +45,8 @@ def validate_args(args, parser):
 def parse_args():
     parser = generate_parser()
     args = parser.parse_args()
+    set_debug(args.debug)
+    debug("Debug messages activated")
     validate_args(args, parser)
     return args
 
