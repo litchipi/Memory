@@ -39,10 +39,16 @@ def __create_backup_process(category, exclude, include):
 
 def __wait_backup_finished():
     global RUNNING_PROCESSES
+    exit_codes = list()
     while any([t.is_alive() for t in RUNNING_PROCESSES.values()]):
         for t in RUNNING_PROCESSES.values():
             t.join(timeout=gcst.THREAD_JOIN_TIMEOUT)
-        RUNNING_PROCESSES = {c:t for c, t in RUNNING_PROCESSES.items() if t.is_alive()}
+     
+        for key in list(RUNNING_PROCESSES.keys()):
+            if not RUNNING_PROCESSES[key].is_alive():
+                proc = RUNNING_PROCESSES.pop(key)
+                exit_codes.append(proc.exitcode)
+    return any(exit_codes);
 
 def __backup_category(args, category):
     debug("Loading registry ...", heading=category)
@@ -68,7 +74,7 @@ def backup_all(args):
     for cat in categories:
         __backup_category(args, cat)
     __start_processes()
-    __wait_backup_finished()
+    return __wait_backup_finished()
 
 def backup(args):
     for cat in args.category:
@@ -79,7 +85,7 @@ def backup(args):
         else:
             __backup_category(args, cat)
     __start_processes()
-    __wait_backup_finished()
+    return __wait_backup_finished()
 
 def validate_backup(args):
     pass

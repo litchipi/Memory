@@ -21,14 +21,14 @@ from src.exclude import exclude
 def start(args):
     handlers = get_commands_handlers()
     if args.subcmd in handlers.keys():
-        handlers[args.subcmd](args)
+        ret = handlers[args.subcmd](args)
+        if ret is None:
+            return 0;
+        else:
+            return ret;
     else:
         error("Subcommand not recognized: {}".format(args.subcmd))
 
 if __name__ == "__main__":
-    try:
-        start(parse_args())
-        ret = 0
-    finally:
-        ret = 1
+    ret = start(parse_args())
     sys.exit(ret)
