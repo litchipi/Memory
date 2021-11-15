@@ -16,7 +16,7 @@ function test_dep {
 test_dep "restic" || exit 1;
 test_dep "python3-pip" || exit 1;
 
-pip install argcomplete argparse toml
+pip install argcomplete argparse toml argon2
 
 INSTALL_DIR=~/.local/share/memory/
 

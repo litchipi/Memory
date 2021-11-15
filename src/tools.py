@@ -3,6 +3,7 @@ import re
 import json
 import glob
 import time
+import argon2
 import string
 import random
 import shutil
@@ -28,11 +29,20 @@ class GlobalConstants:
 
 __PWD = [threading.Semaphore(), None]
 
-def get_password():
+def __get_password(hardened=False, salt=None, **kwargs):
+    pwd = getpass.getpass()
+    if not hardened:
+        return pwd
+    else:
+        if salt is None:
+            raise Exception("Hardened password requires salt parameter")
+        return base64.b64encode(argon2.argon2_hash(pwd*8, salt*8, **kwargs)).decode()
+
+def get_password(**kwargs):
     global __PWD
     __PWD[0].acquire()
     if __PWD[1] is None:
-        __PWD[1] = getpass.getpass()
+        __PWD[1] = __get_password(**kwargs)
     __PWD[0].release()
     return __PWD[1]
 
