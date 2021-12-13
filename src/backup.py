@@ -21,10 +21,10 @@ def __restic_backup(category, excl, incl):
         progress("Init restic repository...", heading=category)
         if not os.path.isdir(out_repo):
             os.mkdir(out_repo)
-        ret = call_cmdline("RESTIC_PASSWORD={} restic init -r {}".format(get_password(), out_repo))
+        ret = call_cmdline("RESTIC_PASSWORD_FILE={} restic init -r {}".format(gcst.MEMORY_PWD, out_repo))
     progress("Backup in progress...", heading=category)
-    ret = call_cmdline("RESTIC_PASSWORD={} restic backup -r {} {} -- {}".format(
-        get_password(), out_repo , all_excludes, " ".join([p for p in incl if os.path.exists(p)])))
+    ret = call_cmdline("RESTIC_PASSWORD_FILE={} restic backup -r {} {} -- {}".format(
+        gcst.MEMORY_PWD, out_repo , all_excludes, " ".join([p for p in incl if os.path.exists(p)])))
     if ret:
         error("Restic command failed for category {}".format(category))
 
@@ -60,7 +60,6 @@ def __backup_category(args, category):
     debug("Loading excludes ...", heading=category)
     excl = read_all_excludes(reg)
     if len(incl) == 0: return
-    get_password()
     debug("Starting process ...", heading=category)
     RUNNING_PROCESSES[category] = __create_backup_process(category, excl, incl)
 

@@ -25,16 +25,12 @@ class GlobalConstants:
     EXCLUDE_TEXT = "exclude"
     DEFAULT_CAT_REGISTER = {INCLUDE_TEXT: [], EXCLUDE_TEXT:{t:list() for t in EXCLUDES_TYPES}}
     DEFAULT_SUBCMD = "backup"
+    MEMORY_PWD = os.path.join(os.path.expanduser("~"), ".memory_pwd")
 
-__PWD = [threading.Semaphore(), None]
-
-def get_password():
-    global __PWD
-    __PWD[0].acquire()
-    if __PWD[1] is None:
-        __PWD[1] = getpass.getpass()
-    __PWD[0].release()
-    return __PWD[1]
+if not os.path.isfile(GlobalConstants.MEMORY_PWD):
+    import hashlib
+    with open(GlobalConstants.MEMORY_PWD, "w") as f:
+        f.write(hashlib.sha3_512(os.urandom(2048)).hexdigest())
 
 def cmd_get_output(cmd, **kwargs):
     p = subprocess.Popen(__prep_popen_cmd(cmd), shell=True,

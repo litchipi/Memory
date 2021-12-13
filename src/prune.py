@@ -9,6 +9,7 @@
 
 from src.tui_toolbox import error, warning, progress
 from src.tools import *
+from src.tools import GlobalConstants as gcst
 
 PRUNE_COMMON_ARGS = " ".join([
     "--prune",
@@ -21,8 +22,8 @@ def prune_all(args):
     for cat in get_categories_list():
         progress("Pruning category {}, keeping only {} snapshots".format(cat, args.keep))
         repo_path = get_category_repodir(cat)
-        call_cmdline("RESTIC_PASSWORD={} restic -r {} forget --keep-last {} {}".format(
-            get_password(), repo_path, args.keep, PRUNE_COMMON_ARGS))
+        call_cmdline("RESTIC_PASSWORD_FILE={} restic -r {} forget --keep-last {} {}".format(
+            gcst.MEMORY_PWD, repo_path, args.keep, PRUNE_COMMON_ARGS))
     progress("Done")
 
 def prune(args):
@@ -30,8 +31,8 @@ def prune(args):
     for cat in args.category:
         progress("Pruning category {}, keeping only {} snapshots".format(cat, args.keep))
         repo_path = get_category_repodir(cat)
-        call_cmdline("RESTIC_PASSWORD={} restic -r {} forget --keep-last {} {}".format(
-            get_password(), repo_path, args.keep, PRUNE_COMMON_ARGS))
+        call_cmdline("RESTIC_PASSWORD_FILE={} restic -r {} forget --keep-last {} {}".format(
+            gcst.MEMORY_PWD, repo_path, args.keep, PRUNE_COMMON_ARGS))
         progress("Done")
 
 def generate_prune_parser(parser):
